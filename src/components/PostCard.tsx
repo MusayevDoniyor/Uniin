@@ -68,7 +68,7 @@ function extractScoreChips(content: string): string[] {
   return out;
 }
 
-export function PostCard({ post }: { post: PostWithAuthor }) {
+export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?: (id: string) => void }) {
   const { user } = useAuth();
   const isGU = post.profiles.user_type === "gu";
   const [showComments, setShowComments] = useState(false);
@@ -79,6 +79,64 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [commentCount, setCommentCount] = useState(post.comments_count);
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Ownership: post.author_id is a profile id. Resolve current user's profile id.
+  const [myProfileId, setMyProfileId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) { setMyProfileId(null); return; }
+    supabase.from("profiles").select("id").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setMyProfileId(data?.id ?? null));
+  }, [user]);
+  const isOwner = !!myProfileId && myProfileId === post.author_id;
+
+  // Edit + delete state
+  const [content, setContent] = useState(post.content);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editValue, setEditValue] = useState(post.content);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
+  const copyLink = async () => {
+    const url = `${window.location.origin}/feed#post-${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Havola nusxalandi");
+    } catch {
+      toast.error("Nusxalab bo'lmadi");
+    }
+  };
+
+  const sharePost = async () => {
+    const url = `${window.location.origin}/feed#post-${post.id}`;
+    const shareData = { title: post.title || "Uniin post", text: post.content?.slice(0, 120) || "", url };
+    if (navigator.share) {
+      try { await navigator.share(shareData); return; } catch { /* user cancelled */ }
+    }
+    copyLink();
+  };
+
+  const saveEdit = async () => {
+    const text = editValue.trim();
+    if (!text) return;
+    setSavingEdit(true);
+    const { error } = await supabase.from("posts").update({ content: text }).eq("id", post.id);
+    setSavingEdit(false);
+    if (error) return toast.error(error.message);
+    setContent(text);
+    setEditOpen(false);
+    toast.success("Post yangilandi");
+  };
+
+  const deletePost = async () => {
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) return toast.error(error.message);
+    setConfirmDelete(false);
+    setDeleted(true);
+    toast.success("Post o'chirildi");
+    onDeleted?.(post.id);
+  };
+
 
   // Reaction counts summary
   const [reactCounts, setReactCounts] = useState<Record<string, number>>({});
