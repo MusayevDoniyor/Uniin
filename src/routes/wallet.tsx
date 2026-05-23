@@ -76,7 +76,7 @@ function WalletPage() {
 function TopupForm({ onDone }: { onDone: () => void }) {
   const { user } = useAuth();
   const [amount, setAmount] = useState("10");
-  const [provider, setProvider] = useState<"click" | "payme" | "uzcard" | "stripe">("click");
+  const [provider, setProvider] = useState<"uzum" | "stripe">("uzum");
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -103,9 +103,7 @@ function TopupForm({ onDone }: { onDone: () => void }) {
           <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="click">Click</SelectItem>
-              <SelectItem value="payme">Payme</SelectItem>
-              <SelectItem value="uzcard">Uzcard</SelectItem>
+              <SelectItem value="uzum">Uzum (Click/Payme/Uzcard)</SelectItem>
               <SelectItem value="stripe">Stripe (xalqaro)</SelectItem>
             </SelectContent>
           </Select>
@@ -119,7 +117,7 @@ function TopupForm({ onDone }: { onDone: () => void }) {
 function WithdrawForm({ balance, onDone }: { balance: number; onDone: () => void }) {
   const { user } = useAuth();
   const [amount, setAmount] = useState("10");
-  const [provider, setProvider] = useState<"click" | "payme" | "uzcard" | "stripe">("click");
+  const [provider, setProvider] = useState<"uzum" | "stripe">("uzum");
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -148,9 +146,7 @@ function WithdrawForm({ balance, onDone }: { balance: number; onDone: () => void
           <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="click">Click</SelectItem>
-              <SelectItem value="payme">Payme</SelectItem>
-              <SelectItem value="uzcard">Uzcard</SelectItem>
+              <SelectItem value="uzum">Uzum</SelectItem>
               <SelectItem value="stripe">Stripe</SelectItem>
             </SelectContent>
           </Select>
@@ -161,7 +157,7 @@ function WithdrawForm({ balance, onDone }: { balance: number; onDone: () => void
   );
 }
 
-const STATUS_ICON: Record<string, JSX.Element> = {
+const STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Clock className="size-3.5 text-muted-foreground" />,
   completed: <CheckCircle2 className="size-3.5 text-success" />,
   approved: <CheckCircle2 className="size-3.5 text-success" />,

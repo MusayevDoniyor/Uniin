@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as UniversitiesRouteImport } from './routes/universities'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -21,10 +22,16 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as EventsRouteImport } from './routes/events'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 
+const WalletRoute = WalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UniversitiesRoute = UniversitiesRouteImport.update({
   id: '/universities',
   path: '/universities',
@@ -85,6 +92,11 @@ const ExploreRoute = ExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsRoute = EventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
@@ -104,6 +116,7 @@ const ProfileIdRoute = ProfileIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
+  '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/groups': typeof GroupsRoute
@@ -116,11 +129,13 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
+  '/wallet': typeof WalletRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
+  '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/groups': typeof GroupsRoute
@@ -133,12 +148,14 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
+  '/wallet': typeof WalletRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
+  '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/groups': typeof GroupsRoute
@@ -151,6 +168,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
+  '/wallet': typeof WalletRoute
   '/profile/$id': typeof ProfileIdRoute
 }
 export interface FileRouteTypes {
@@ -158,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/ai'
+    | '/events'
     | '/explore'
     | '/feed'
     | '/groups'
@@ -170,11 +189,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/universities'
+    | '/wallet'
     | '/profile/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ai'
+    | '/events'
     | '/explore'
     | '/feed'
     | '/groups'
@@ -187,11 +208,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/universities'
+    | '/wallet'
     | '/profile/$id'
   id:
     | '__root__'
     | '/'
     | '/ai'
+    | '/events'
     | '/explore'
     | '/feed'
     | '/groups'
@@ -204,12 +227,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/universities'
+    | '/wallet'
     | '/profile/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiRoute: typeof AiRoute
+  EventsRoute: typeof EventsRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
   GroupsRoute: typeof GroupsRoute
@@ -222,11 +247,19 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   UniversitiesRoute: typeof UniversitiesRoute
+  WalletRoute: typeof WalletRoute
   ProfileIdRoute: typeof ProfileIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wallet': {
+      id: '/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/universities': {
       id: '/universities'
       path: '/universities'
@@ -311,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/events': {
+      id: '/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof EventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai': {
       id: '/ai'
       path: '/ai'
@@ -338,6 +378,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
+  EventsRoute: EventsRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
   GroupsRoute: GroupsRoute,
@@ -350,6 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   UniversitiesRoute: UniversitiesRoute,
+  WalletRoute: WalletRoute,
   ProfileIdRoute: ProfileIdRoute,
 }
 export const routeTree = rootRouteImport
