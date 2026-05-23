@@ -17,6 +17,7 @@ const NAV = [
   { to: "/ai", label: "AI Advisor", icon: Sparkles },
   { to: "/universities", label: "Universities", icon: GraduationCap },
   { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children, rightSidebar }: { children: React.ReactNode; rightSidebar?: React.ReactNode }) {
