@@ -144,7 +144,7 @@ function ProfilePage() {
                 {isGU && <Button variant="outline" className="shadow-lg"><Video className="size-4 mr-1.5" /> Book session</Button>}
               </div>
             )}
-          </<div>
+          </div>
         </div>
       </div>
 
