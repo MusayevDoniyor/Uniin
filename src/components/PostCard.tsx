@@ -60,7 +60,16 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count);
+  const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const toggleCommentLike = (id: string) =>
+    setLikedComments((s) => ({ ...s, [id]: !s[id] }));
+
+  const replyToComment = (name?: string) => {
+    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} ${v}`));
+    setTimeout(() => inputRef.current?.focus(), 30);
+  };
 
   // Realtime comment subscription whenever comments are open
   useEffect(() => {
