@@ -287,7 +287,7 @@ function UniversityPicker({ form, update }: any) {
           {results.length > 0 && (
             <div className="mt-2 surface-card divide-y divide-border max-h-64 overflow-auto">
               {results.map(u => (
-                <button key={u.name} onClick={() => setAdding(u)} className="w-full text-left p-3 hover:bg-surface-2 flex justify-between items-center">
+                <button key={u.name} onClick={() => setAdding({ university_name: u.name, country: u.country, qs_rank: u.qsRank })} className="w-full text-left p-3 hover:bg-surface-2 flex justify-between items-center">
                   <div>
                     <div className="font-medium">{u.flag} {u.name}</div>
                     <div className="text-xs text-muted-foreground">{u.country}</div>
