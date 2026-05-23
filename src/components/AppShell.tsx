@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut } from "lucide-react";
+import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
