@@ -73,13 +73,17 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
           {/* Top bar mobile */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur z-20">
             <Logo size="sm" />
-            <Link to="/notifications" className="relative">
-              <Bell className="size-5" />
-              {unread > 0 && <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-xs flex items-center justify-center">{unread}</span>}
-            </Link>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-surface">
+                <Bell className="size-5" />
+                {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center">{unread}</span>}
+              </Link>
+            </div>
           </header>
           {/* Top bar desktop */}
           <header className="hidden md:flex items-center justify-end gap-3 p-4 sticky top-0 bg-background/80 backdrop-blur z-20 border-b border-border">
+            <ThemeToggle />
             <Link to="/notifications" className="relative p-2 hover:bg-surface rounded-lg">
               <Bell className="size-5" />
               {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center font-semibold">{unread}</span>}
