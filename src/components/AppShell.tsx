@@ -5,8 +5,9 @@ import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NAV = [
   { to: "/feed", label: "Home", icon: Home },
@@ -25,6 +26,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
   const loc = useLocation();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
+  const mounted = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -33,15 +35,28 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
       setUnread(count || 0);
     };
     load();
-    const ch = supabase.channel("notif-count").on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, load).subscribe();
+    mounted.current = false;
+    const ch = supabase.channel(`notif-stream-${user.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload: any) => {
+        load();
+        if (!mounted.current) { mounted.current = true; return; }
+        const msg = payload?.new?.content as string | undefined;
+        if (msg) {
+          toast(msg, {
+            description: "New notification",
+            action: { label: "View", onClick: () => navigate({ to: "/notifications" }) },
+          });
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, load)
+      .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user]);
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-border p-4 sticky top-0 h-screen">
-        <Link to="/feed" className="mb-8 px-2"><Logo size="md" /></Link>
+        <Link to="/feed" className="mb-8 px-1"><Logo size="lg" /></Link>
         <nav className="flex-1 space-y-1">
           {NAV.map(item => {
             const Icon = item.icon;
@@ -69,12 +84,10 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
         </button>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex min-w-0">
         <main className="flex-1 min-w-0">
-          {/* Top bar mobile */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur z-20">
-            <Logo size="sm" />
+            <Logo size="md" />
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-surface">
@@ -83,7 +96,6 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
               </Link>
             </div>
           </header>
-          {/* Top bar desktop */}
           <header className="hidden md:flex items-center justify-end gap-3 p-4 sticky top-0 bg-background/80 backdrop-blur z-20 border-b border-border">
             <ThemeToggle />
             <Link to="/notifications" className="relative p-2 hover:bg-surface rounded-lg">
@@ -97,7 +109,6 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
         {rightSidebar && <aside className="hidden lg:block w-80 shrink-0 border-l border-border p-4 sticky top-0 h-screen overflow-y-auto">{rightSidebar}</aside>}
       </div>
 
-      {/* Mobile bottom nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur z-30 flex justify-around py-2">
         {[NAV[0], NAV[1], NAV[2], NAV[7]].map(item => {
           const Icon = item.icon;

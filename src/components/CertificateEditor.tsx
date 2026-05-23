@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { Plus, X, Award, Calendar, Pencil } from "lucide-react";
+import { Plus, X, Award, Calendar, Pencil, Upload, ImageIcon, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
 
 export type Certification = {
   name: string;
   issuer: string;
-  issue_date: string; // YYYY-MM
+  issue_date: string;
   credential_url?: string;
+  image_url?: string;
 };
 
 type Props = {
@@ -19,11 +23,13 @@ type Props = {
 };
 
 export function CertificateEditor({ value, onChange, compact }: Props) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
-  const [draft, setDraft] = useState<Certification>({ name: "", issuer: "", issue_date: "", credential_url: "" });
+  const [draft, setDraft] = useState<Certification>({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" });
+  const [uploading, setUploading] = useState(false);
 
-  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "" }); setEditIdx(null); setOpen(true); };
+  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" }); setEditIdx(null); setOpen(true); };
   const openEdit = (i: number) => { setDraft(value[i]); setEditIdx(i); setOpen(true); };
   const save = () => {
     if (!draft.name.trim() || !draft.issuer.trim()) return;
@@ -34,19 +40,37 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
   };
   const remove = (i: number) => onChange(value.filter((_, j) => j !== i));
 
+  const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file || !user) return;
+    setUploading(true);
+    const path = `${user.id}/cert-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); setUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    setDraft(d => ({ ...d, image_url: publicUrl }));
+    setUploading(false);
+  };
+
   return (
     <div className="space-y-2">
       {value.length > 0 && (
         <div className={compact ? "grid gap-2" : "grid sm:grid-cols-2 gap-2"}>
           {value.map((c, i) => (
             <div key={i} className="surface-card p-3 flex items-start gap-3">
-              <div className="size-9 rounded-md bg-gold/15 text-gold flex items-center justify-center shrink-0">
-                <Award className="size-4" />
-              </div>
+              {c.image_url ? (
+                <img src={c.image_url} alt={c.name} className="size-12 rounded-md object-cover shrink-0" />
+              ) : (
+                <div className="size-12 rounded-md bg-gold/15 text-gold flex items-center justify-center shrink-0">
+                  <Award className="size-5" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">{c.name}</div>
                 <div className="text-xs text-muted-foreground truncate">{c.issuer}</div>
-                {c.issue_date && <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1"><Calendar className="size-3" />{c.issue_date}</div>}
+                <div className="flex items-center gap-2 mt-0.5">
+                  {c.issue_date && <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Calendar className="size-3" />{c.issue_date}</div>}
+                  {c.credential_url && <a href={c.credential_url} target="_blank" rel="noreferrer" className="text-[11px] text-info hover:underline inline-flex items-center gap-0.5"><LinkIcon className="size-3" /> Link</a>}
+                </div>
               </div>
               <div className="flex gap-1">
                 <button type="button" onClick={() => openEdit(i)} className="p-1.5 rounded hover:bg-surface-2 text-muted-foreground"><Pencil className="size-3.5" /></button>
@@ -79,8 +103,23 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
               <Input type="month" value={draft.issue_date} onChange={e => setDraft(d => ({ ...d, issue_date: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs">Credential URL (optional)</Label>
+              <Label className="text-xs flex items-center gap-1"><LinkIcon className="size-3" /> Credential URL (optional)</Label>
               <Input value={draft.credential_url || ""} onChange={e => setDraft(d => ({ ...d, credential_url: e.target.value }))} placeholder="https://..." className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs flex items-center gap-1"><ImageIcon className="size-3" /> Certificate image (optional)</Label>
+              <div className="mt-1 flex items-center gap-3">
+                {draft.image_url && <img src={draft.image_url} alt="preview" className="size-14 rounded-md object-cover border border-border" />}
+                <Label className="cursor-pointer">
+                  <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-xs hover:bg-surface">
+                    <Upload className="size-3.5 mr-1.5" />{uploading ? "Uploading…" : draft.image_url ? "Replace image" : "Upload image"}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={uploadImage} />
+                </Label>
+                {draft.image_url && (
+                  <button type="button" onClick={() => setDraft(d => ({ ...d, image_url: "" }))} className="text-xs text-muted-foreground hover:text-destructive">Remove</button>
+                )}
+              </div>
             </div>
             <Button onClick={save} className="w-full bg-primary hover:bg-accent">Save certification</Button>
           </div>

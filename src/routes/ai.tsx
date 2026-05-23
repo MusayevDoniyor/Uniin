@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, GraduationCap, Target, PenLine, Send, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { callAI } from "@/lib/ai.functions";
+import { Sparkles, Target, BarChart3, PenLine, Send, Loader2, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +18,7 @@ type Mode = "university_match" | "profile_analyzer" | "essay_coach";
 
 function AIAdvisor() {
   const { profile } = useAuth();
+  const ai = useServerFn(callAI);
   const [mode, setMode] = useState<Mode>("university_match");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,36 +79,35 @@ function AIAdvisor() {
 - Bio: ${profile.bio}`;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+      const data = await ai({
+        data: {
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompts[m] + "\n\n" + profileContext },
             { role: "user", content: userMsg },
           ],
           tools: [{ type: "function", function: tools[m] }],
           tool_choice: { type: "function", function: { name: tools[m].name } },
-        }),
+        },
       });
-      if (!res.ok) {
-        if (res.status === 402) toast.error("Add credits to your Lovable AI workspace.");
-        else if (res.status === 429) toast.error("Rate limited — try again in a moment.");
-        else toast.error("AI request failed");
-        return;
-      }
-      const data = await res.json();
       const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
       const parsed = args ? JSON.parse(args) : null;
       setResult(parsed); setSummary(parsed?.summary || "");
     } catch (e: any) {
-      toast.error(e.message);
+      const status = e?.status || e?.cause?.status;
+      if (status === 402) toast.error("Add credits to your Lovable AI workspace.");
+      else if (status === 429) toast.error("Rate limited — try again in a moment.");
+      else toast.error(e?.message || "AI request failed");
     } finally {
       setLoading(false);
     }
   };
+
+  const STARTERS = [
+    { m: "university_match" as Mode, icon: Target, title: "Find universities that match my profile", text: "Suggest universities for me based on my profile." },
+    { m: "profile_analyzer" as Mode, icon: BarChart3, title: "Analyze my profile — what am I missing?", text: "Analyze my profile and tell me what gaps I have." },
+    { m: "essay_coach" as Mode, icon: PenLine, title: "Coach me on my essay", text: "Coach me. Here's my essay: [paste your essay here]" },
+  ];
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-65px)]">
@@ -116,9 +117,9 @@ function AIAdvisor() {
           <div className="flex items-center gap-2 mb-3"><Sparkles className="size-5 text-primary" /><h1 className="text-xl font-bold">AI Advisor</h1></div>
           <Tabs value={mode} onValueChange={v => setMode(v as Mode)}>
             <TabsList className="w-full">
-              <TabsTrigger value="university_match" className="flex-1">🎯 Match</TabsTrigger>
-              <TabsTrigger value="profile_analyzer" className="flex-1">📊 Analyze</TabsTrigger>
-              <TabsTrigger value="essay_coach" className="flex-1">✍️ Essay</TabsTrigger>
+              <TabsTrigger value="university_match" className="flex-1"><Target className="size-4 mr-1.5" />Match</TabsTrigger>
+              <TabsTrigger value="profile_analyzer" className="flex-1"><BarChart3 className="size-4 mr-1.5" />Analyze</TabsTrigger>
+              <TabsTrigger value="essay_coach" className="flex-1"><PenLine className="size-4 mr-1.5" />Essay</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -127,16 +128,16 @@ function AIAdvisor() {
           {!result && !loading && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">Start with a prompt:</p>
-              {[
-                { m: "university_match" as Mode, t: "🎯 Find universities that match my profile", text: "Suggest universities for me based on my profile." },
-                { m: "profile_analyzer" as Mode, t: "📊 Analyze my profile — what am I missing?", text: "Analyze my profile and tell me what gaps I have." },
-                { m: "essay_coach" as Mode, t: "✍️ Coach me on my essay", text: "Coach me. Here's my essay: [paste your essay here]" },
-              ].map(p => (
-                <button key={p.t} onClick={() => { setMode(p.m); setInput(p.text); send(p.m, p.text); }}
-                  className="w-full text-left surface-card p-4 hover:border-primary/40 transition-colors">
-                  <div className="font-medium">{p.t}</div>
-                </button>
-              ))}
+              {STARTERS.map(p => {
+                const Icon = p.icon;
+                return (
+                  <button key={p.title} onClick={() => { setMode(p.m); setInput(p.text); send(p.m, p.text); }}
+                    className="w-full text-left surface-card p-4 hover:border-primary/40 transition-colors flex items-start gap-3">
+                    <Icon className="size-5 text-primary mt-0.5 shrink-0" />
+                    <div className="font-medium">{p.title}</div>
+                  </button>
+                );
+              })}
             </div>
           )}
           {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Thinking…</div>}
@@ -192,14 +193,14 @@ function MatchPanel({ data }: any) {
                 <div className="text-2xl font-bold mt-1">{u.fit_score}</div>
               </div>
             </div>
-            <div className="text-sm mt-3"><span className="text-success">✓ </span>{u.why_good_fit}</div>
-            <div className="text-sm mt-1"><span className="text-gold">⚠ </span>{u.main_concern}</div>
+            <div className="text-sm mt-3 flex gap-2"><CheckCircle2 className="size-4 text-success mt-0.5 shrink-0" /><span>{u.why_good_fit}</span></div>
+            <div className="text-sm mt-1 flex gap-2"><AlertTriangle className="size-4 text-gold mt-0.5 shrink-0" /><span>{u.main_concern}</span></div>
           </div>
         ))}
       </div>
       {data.next_steps?.length > 0 && (
         <div className="surface-card p-4">
-          <h3 className="font-semibold mb-2">Next steps</h3>
+          <h3 className="font-semibold mb-2 flex items-center gap-2"><TrendingUp className="size-4 text-primary" /> Next steps</h3>
           <ol className="space-y-1.5 text-sm">{data.next_steps.map((s: string, i: number) => <li key={i} className="flex gap-2"><span className="text-primary">{i + 1}.</span> {s}</li>)}</ol>
         </div>
       )}
