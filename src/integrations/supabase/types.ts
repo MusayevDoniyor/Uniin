@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      badges: {
+        Row: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: Database["public"]["Enums"]["badge_type"]
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -65,6 +86,144 @@ export type Database = {
           last_message?: string | null
           last_message_at?: string | null
           participant_ids?: string[]
+        }
+        Relationships: []
+      }
+      deadline_reminders: {
+        Row: {
+          created_at: string
+          deadline_at: string
+          id: string
+          notes: string | null
+          reminder_days: number[]
+          university_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline_at: string
+          id?: string
+          notes?: string | null
+          reminder_days?: number[]
+          university_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline_at?: string
+          id?: string
+          notes?: string | null
+          reminder_days?: number[]
+          university_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      escrow_transactions: {
+        Row: {
+          amount_usd: number
+          buyer_id: string
+          created_at: string
+          deadline_at: string
+          id: string
+          listing_id: string
+          platform_fee_usd: number
+          resolved_at: string | null
+          seller_id: string
+          seller_payout_usd: number
+          status: Database["public"]["Enums"]["escrow_status"]
+        }
+        Insert: {
+          amount_usd: number
+          buyer_id: string
+          created_at?: string
+          deadline_at?: string
+          id?: string
+          listing_id: string
+          platform_fee_usd?: number
+          resolved_at?: string | null
+          seller_id: string
+          seller_payout_usd: number
+          status?: Database["public"]["Enums"]["escrow_status"]
+        }
+        Update: {
+          amount_usd?: number
+          buyer_id?: string
+          created_at?: string
+          deadline_at?: string
+          id?: string
+          listing_id?: string
+          platform_fee_usd?: number
+          resolved_at?: string | null
+          seller_id?: string
+          seller_payout_usd?: number
+          status?: Database["public"]["Enums"]["escrow_status"]
+        }
+        Relationships: []
+      }
+      event_rsvps: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          attendee_count: number
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          host_id: string
+          id: string
+          max_attendees: number | null
+          room_url: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["event_status"]
+          title: string
+        }
+        Insert: {
+          attendee_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          host_id: string
+          id?: string
+          max_attendees?: number | null
+          room_url?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title: string
+        }
+        Update: {
+          attendee_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          host_id?: string
+          id?: string
+          max_attendees?: number | null
+          room_url?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          title?: string
         }
         Relationships: []
       }
@@ -277,6 +436,7 @@ export type Database = {
           created_at: string | null
           delivery_time: string | null
           description: string | null
+          escrow_enabled: boolean
           full_content_url: string | null
           id: string
           is_free: boolean | null
@@ -297,6 +457,7 @@ export type Database = {
           created_at?: string | null
           delivery_time?: string | null
           description?: string | null
+          escrow_enabled?: boolean
           full_content_url?: string | null
           id?: string
           is_free?: boolean | null
@@ -317,6 +478,7 @@ export type Database = {
           created_at?: string | null
           delivery_time?: string | null
           description?: string | null
+          escrow_enabled?: boolean
           full_content_url?: string | null
           id?: string
           is_free?: boolean | null
@@ -410,6 +572,30 @@ export type Database = {
         }
         Relationships: []
       }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           author_id: string
@@ -478,6 +664,30 @@ export type Database = {
           },
         ]
       }
+      post_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction: Database["public"]["Enums"]["reaction_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction?: Database["public"]["Enums"]["reaction_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction?: Database["public"]["Enums"]["reaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string
@@ -486,9 +696,12 @@ export type Database = {
           created_at: string | null
           group_id: string | null
           id: string
+          impressions_count: number
           likes_count: number | null
           media_urls: string[] | null
+          poll_options: Json | null
           post_type: Database["public"]["Enums"]["post_type"] | null
+          title: string | null
         }
         Insert: {
           author_id: string
@@ -497,9 +710,12 @@ export type Database = {
           created_at?: string | null
           group_id?: string | null
           id?: string
+          impressions_count?: number
           likes_count?: number | null
           media_urls?: string[] | null
+          poll_options?: Json | null
           post_type?: Database["public"]["Enums"]["post_type"] | null
+          title?: string | null
         }
         Update: {
           author_id?: string
@@ -508,9 +724,12 @@ export type Database = {
           created_at?: string | null
           group_id?: string | null
           id?: string
+          impressions_count?: number
           likes_count?: number | null
           media_urls?: string[] | null
+          poll_options?: Json | null
           post_type?: Database["public"]["Enums"]["post_type"] | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -521,6 +740,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_views: {
+        Row: {
+          created_at: string
+          id: string
+          viewed_id: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          viewed_id: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          viewed_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -541,6 +781,8 @@ export type Database = {
           ielts: number | null
           intended_major: string | null
           interests: string[] | null
+          is_open_to_mentoring: boolean
+          is_premium: boolean
           is_verified_gu: boolean | null
           onboarding_complete: boolean | null
           phone: string | null
@@ -573,6 +815,8 @@ export type Database = {
           ielts?: number | null
           intended_major?: string | null
           interests?: string[] | null
+          is_open_to_mentoring?: boolean
+          is_premium?: boolean
           is_verified_gu?: boolean | null
           onboarding_complete?: boolean | null
           phone?: string | null
@@ -605,6 +849,8 @@ export type Database = {
           ielts?: number | null
           intended_major?: string | null
           interests?: string[] | null
+          is_open_to_mentoring?: boolean
+          is_premium?: boolean
           is_verified_gu?: boolean | null
           onboarding_complete?: boolean | null
           phone?: string | null
@@ -677,6 +923,144 @@ export type Database = {
           },
         ]
       }
+      skill_endorsements: {
+        Row: {
+          created_at: string
+          endorsed_id: string
+          endorser_id: string
+          id: string
+          skill: string
+        }
+        Insert: {
+          created_at?: string
+          endorsed_id: string
+          endorser_id: string
+          id?: string
+          skill: string
+        }
+        Update: {
+          created_at?: string
+          endorsed_id?: string
+          endorser_id?: string
+          id?: string
+          skill?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_topups: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          id: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          status: Database["public"]["Enums"]["topup_status"]
+          user_id: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          id?: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          status?: Database["public"]["Enums"]["topup_status"]
+          user_id: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          status?: Database["public"]["Enums"]["topup_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance_usd: number
+          created_at: string
+          id: string
+          pending_usd: number
+          total_earned_usd: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_usd?: number
+          created_at?: string
+          id?: string
+          pending_usd?: number
+          total_earned_usd?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_usd?: number
+          created_at?: string
+          id?: string
+          pending_usd?: number
+          total_earned_usd?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          id: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          user_id: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          id?: string
+          provider: Database["public"]["Enums"]["payment_provider"]
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          user_id: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -686,14 +1070,37 @@ export type Database = {
     }
     Enums: {
       ai_mode: "university_match" | "profile_analyzer" | "essay_coach"
+      badge_type:
+        | "first_post"
+        | "early_adopter"
+        | "top_mentor"
+        | "hundred_followers"
+        | "verified_gu"
+        | "marketplace_star"
+        | "top_contributor"
+      escrow_status: "held" | "released" | "refunded" | "disputed"
+      event_status: "upcoming" | "live" | "completed" | "cancelled"
       group_role: "admin" | "member"
       listing_status: "active" | "paused" | "sold"
       listing_type: "full_package" | "essay" | "portfolio" | "chat_call"
-      post_type: "update" | "question" | "resource" | "win" | "essay_tip"
+      payment_provider: "stripe" | "uzum"
+      post_type:
+        | "update"
+        | "question"
+        | "resource"
+        | "win"
+        | "essay_tip"
+        | "article"
+        | "poll"
       purchase_status: "pending" | "completed"
+      reaction_type: "like" | "insightful" | "congrats" | "support" | "curious"
       session_status: "scheduled" | "live" | "completed" | "cancelled"
       session_type: "video" | "audio" | "chat"
+      subscription_plan: "free" | "premium"
+      subscription_status: "active" | "cancelled" | "pending"
+      topup_status: "pending" | "completed" | "failed"
       user_type: "gu" | "prep"
+      withdrawal_status: "pending" | "paid" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -822,14 +1229,39 @@ export const Constants = {
   public: {
     Enums: {
       ai_mode: ["university_match", "profile_analyzer", "essay_coach"],
+      badge_type: [
+        "first_post",
+        "early_adopter",
+        "top_mentor",
+        "hundred_followers",
+        "verified_gu",
+        "marketplace_star",
+        "top_contributor",
+      ],
+      escrow_status: ["held", "released", "refunded", "disputed"],
+      event_status: ["upcoming", "live", "completed", "cancelled"],
       group_role: ["admin", "member"],
       listing_status: ["active", "paused", "sold"],
       listing_type: ["full_package", "essay", "portfolio", "chat_call"],
-      post_type: ["update", "question", "resource", "win", "essay_tip"],
+      payment_provider: ["stripe", "uzum"],
+      post_type: [
+        "update",
+        "question",
+        "resource",
+        "win",
+        "essay_tip",
+        "article",
+        "poll",
+      ],
       purchase_status: ["pending", "completed"],
+      reaction_type: ["like", "insightful", "congrats", "support", "curious"],
       session_status: ["scheduled", "live", "completed", "cancelled"],
       session_type: ["video", "audio", "chat"],
+      subscription_plan: ["free", "premium"],
+      subscription_status: ["active", "cancelled", "pending"],
+      topup_status: ["pending", "completed", "failed"],
       user_type: ["gu", "prep"],
+      withdrawal_status: ["pending", "paid", "failed"],
     },
   },
 } as const
