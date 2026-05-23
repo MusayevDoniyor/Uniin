@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "./UserBadge";
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles, Link2, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +9,23 @@ import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
 import { ReactionBar, REACTIONS } from "./ReactionBar";
 import { PollBlock } from "./PollBlock";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 
 type PostWithAuthor = {
   id: string; content: string; title?: string | null; media_urls: string[]; post_type: string;
