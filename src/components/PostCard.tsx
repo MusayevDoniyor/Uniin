@@ -476,6 +476,44 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
           )}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Postni tahrirlash</DialogTitle>
+          </DialogHeader>
+          <textarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            rows={6}
+            className="w-full bg-surface-2 rounded-lg p-3 text-sm border border-border focus:outline-none focus:border-primary resize-none"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Bekor qilish</Button>
+            <Button onClick={saveEdit} disabled={savingEdit || !editValue.trim()}>
+              {savingEdit ? "Saqlanmoqda…" : "Saqlash"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Postni o'chirasizmi?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Bu amalni qaytarib bo'lmaydi. Post va unga tegishli izohlar o'chiriladi.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Bekor qilish</Button>
+            <Button variant="destructive" onClick={deletePost}>O'chirish</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </article>
+
   );
 }
