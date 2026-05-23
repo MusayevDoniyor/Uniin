@@ -54,8 +54,6 @@ function extractScoreChips(content: string): string[] {
 export function PostCard({ post }: { post: PostWithAuthor }) {
   const { user } = useAuth();
   const isGU = post.profiles.user_type === "gu";
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes_count);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -63,12 +61,6 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [posting, setPosting] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("post_likes").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => setLiked(!!data));
-  }, [user, post.id]);
 
   // Realtime comment subscription whenever comments are open
   useEffect(() => {
