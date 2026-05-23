@@ -339,8 +339,18 @@ function Marketplace() {
               </div>
               <div className="text-center mt-3 text-xs text-muted-foreground">Purchase to unlock full content</div>
             </div>
+            {!active.is_free && active.escrow_enabled !== false && (
+              <div className="surface-card p-3 mt-4 bg-success/5 border-success/30">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-success mb-1.5"><ShieldCheck className="size-3.5" /> Escrow protected</div>
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <div className="flex justify-between"><span>Price</span><span>${Number(active.price_usd).toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Platform fee (10%)</span><span>−${(Number(active.price_usd) * 0.1).toFixed(2)}</span></div>
+                  <div className="flex justify-between text-foreground font-semibold pt-1 border-t border-border/50"><span>Seller receives in 7 days</span><span>${(Number(active.price_usd) * 0.9).toFixed(2)}</span></div>
+                </div>
+              </div>
+            )}
             <Button onClick={() => buy(active)} className="w-full mt-4 bg-primary hover:bg-accent">
-              {active.is_free ? "Get for free" : `Request to buy for $${active.price_usd}`}
+              {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
             </Button>
           </>}
         </DialogContent>
