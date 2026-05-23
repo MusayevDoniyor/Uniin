@@ -1,15 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "./UserBadge";
 import { Link } from "@tanstack/react-router";
-import { Heart, MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
+import { ReactionBar } from "./ReactionBar";
+import { PollBlock } from "./PollBlock";
 
 type PostWithAuthor = {
-  id: string; content: string; media_urls: string[]; post_type: string;
+  id: string; content: string; title?: string | null; media_urls: string[]; post_type: string;
+  poll_options?: string[] | null;
   likes_count: number; comments_count: number; created_at: string; author_id: string;
   profiles: {
     id: string; full_name: string; avatar_url: string | null;
@@ -26,6 +29,8 @@ const POST_TYPE_LABEL: Record<string, { label: string; tone: string }> = {
   question:  { label: "❓ Savol",       tone: "bg-info/15 text-info border-info/30" },
   resource:  { label: "📚 Resurs",      tone: "bg-primary/15 text-primary border-primary/30" },
   essay_tip: { label: "✍️ Essay tip",   tone: "bg-accent/15 text-accent-foreground border-accent/30" },
+  poll:      { label: "📊 So'rovnoma", tone: "bg-info/15 text-info border-info/30" },
+  article:   { label: "📰 Maqola",      tone: "bg-surface-2 text-foreground border-border" },
   update:    { label: "",                tone: "" },
 };
 
@@ -49,8 +54,6 @@ function extractScoreChips(content: string): string[] {
 export function PostCard({ post }: { post: PostWithAuthor }) {
   const { user } = useAuth();
   const isGU = post.profiles.user_type === "gu";
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes_count);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
@@ -58,12 +61,6 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [posting, setPosting] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from("post_likes").select("id").eq("post_id", post.id).eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => setLiked(!!data));
-  }, [user, post.id]);
 
   // Realtime comment subscription whenever comments are open
   useEffect(() => {
@@ -86,16 +83,6 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
     return () => { supabase.removeChannel(ch); };
   }, [showComments, post.id]);
 
-  const toggleLike = async () => {
-    if (!user) return;
-    if (liked) {
-      setLiked(false); setLikes((l) => l - 1);
-      await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", user.id);
-    } else {
-      setLiked(true); setLikes((l) => l + 1);
-      await supabase.from("post_likes").insert({ post_id: post.id, user_id: user.id });
-    }
-  };
 
   const loadComments = async () => {
     const next = !showComments;
@@ -201,10 +188,20 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
+      {/* Title (for poll/article) */}
+      {post.title && <h2 className="mt-3 text-lg font-display font-semibold">{post.title}</h2>}
+
       {/* Body */}
-      <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
-        {post.content}
-      </div>
+      {post.content && (
+        <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
+          {post.content}
+        </div>
+      )}
+
+      {/* Poll */}
+      {post.post_type === "poll" && Array.isArray(post.poll_options) && post.poll_options.length > 0 && (
+        <PollBlock postId={post.id} options={post.poll_options as string[]} />
+      )}
 
       {post.media_urls?.length > 0 && (
         <div className={`mt-3 grid gap-2 rounded-lg overflow-hidden ${post.media_urls.length > 1 ? "grid-cols-2" : ""}`}>
@@ -214,34 +211,18 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
-      {/* Counts strip */}
-      {(likes > 0 || commentCount > 0) && (
-        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-          {likes > 0 ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-flex items-center justify-center size-4 rounded-full bg-primary/15 text-primary">
-                <Heart size={9} className="fill-primary" />
-              </span>
-              {likes}
-            </span>
-          ) : <span />}
-          {commentCount > 0 && (
-            <button onClick={loadComments} className="hover:underline">
-              {commentCount} ta izoh
-            </button>
-          )}
+      {/* Counts strip (only comments now; reactions show their own counts) */}
+      {commentCount > 0 && (
+        <div className="flex items-center justify-end mt-3 text-xs text-muted-foreground">
+          <button onClick={loadComments} className="hover:underline">
+            {commentCount} ta izoh
+          </button>
         </div>
       )}
 
       {/* Action bar */}
-      <div className="grid grid-cols-3 mt-2 pt-2 border-t border-border text-sm text-muted-foreground">
-        <button
-          onClick={toggleLike}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors ${liked ? "text-primary font-semibold" : ""}`}
-        >
-          <Heart className={`size-4 ${liked ? "fill-primary" : ""}`} />
-          <span>Like</span>
-        </button>
+      <div className="grid grid-cols-3 mt-2 pt-2 border-t border-border text-sm text-muted-foreground gap-1">
+        <ReactionBar postId={post.id} />
         <button
           onClick={loadComments}
           className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors ${showComments ? "text-foreground font-semibold" : ""}`}

@@ -22,12 +22,14 @@ function FeedPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState<"update" | "question" | "resource" | "win" | "essay_tip">("update");
+  const [title, setTitle] = useState("");
+  const [postType, setPostType] = useState<"update" | "question" | "resource" | "win" | "essay_tip" | "poll">("update");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [posting, setPosting] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("posts")
-      .select(`id, content, media_urls, post_type, likes_count, comments_count, created_at, author_id,
+      .select(`id, content, title, media_urls, post_type, poll_options, likes_count, comments_count, created_at, author_id,
         profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
       .order("created_at", { ascending: false }).limit(50);
 
@@ -52,14 +54,24 @@ function FeedPage() {
   }, []);
 
   const submitPost = async () => {
-    if (!content.trim() || !profile) return;
+    if (!profile) return;
+    const isPoll = postType === "poll";
+    const cleanOpts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (isPoll) {
+      if (!title.trim()) return toast.error("So'rovnoma uchun savol kerak");
+      if (cleanOpts.length < 2) return toast.error("Kamida 2 ta variant kerak");
+    } else if (!content.trim()) return;
     setPosting(true);
     const { error } = await supabase.from("posts").insert({
-      author_id: profile.id, content: content.trim(), post_type: postType,
+      author_id: profile.id,
+      content: isPoll ? (content.trim() || title.trim()) : content.trim(),
+      title: title.trim() || null,
+      post_type: postType,
+      poll_options: isPoll ? cleanOpts : null,
     });
     setPosting(false);
     if (error) return toast.error(error.message);
-    setContent(""); setPostType("update");
+    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]);
     toast.success("Posted!");
   };
 
@@ -70,19 +82,52 @@ function FeedPage() {
         <div className="flex gap-3">
           <Avatar className="size-10"><AvatarImage src={profile?.avatar_url || undefined} /><AvatarFallback>{profile?.full_name?.[0]}</AvatarFallback></Avatar>
           <div className="flex-1">
+            {postType === "poll" && (
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="So'rovnoma savoli..."
+                className="w-full bg-transparent border-0 focus:outline-none p-2 font-semibold text-base"
+              />
+            )}
             <Textarea value={content} onChange={e => setContent(e.target.value)}
-              placeholder="Share an update, tip, or question..." rows={2}
+              placeholder={postType === "poll" ? "Qo'shimcha tafsilot (ixtiyoriy)..." : "Share an update, tip, or question..."} rows={2}
               className="bg-transparent border-0 resize-none focus-visible:ring-0 p-2" />
-            {content && (
+
+            {postType === "poll" && (
+              <div className="space-y-2 mt-2 pt-2 border-t border-border">
+                {pollOptions.map((opt, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={opt}
+                      onChange={(e) => {
+                        const next = [...pollOptions]; next[i] = e.target.value; setPollOptions(next);
+                      }}
+                      placeholder={`Variant ${i + 1}`}
+                      className="flex-1 bg-surface-2 rounded-md px-3 py-2 text-sm border border-border focus:outline-none focus:border-primary"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button type="button" onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))} className="text-xs text-muted-foreground hover:text-destructive px-2">✕</button>
+                    )}
+                  </div>
+                ))}
+                {pollOptions.length < 6 && (
+                  <button type="button" onClick={() => setPollOptions([...pollOptions, ""])} className="text-xs text-primary hover:underline">+ Variant qo'shish</button>
+                )}
+              </div>
+            )}
+
+            {(content || postType === "poll") && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
                 <Select value={postType} onValueChange={v => setPostType(v as any)}>
-                  <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="update">📝 Update</SelectItem>
                     <SelectItem value="question">❓ Question</SelectItem>
                     <SelectItem value="resource">📚 Resource</SelectItem>
                     <SelectItem value="win">🎉 Application Win</SelectItem>
                     <SelectItem value="essay_tip">✍️ Essay Tip</SelectItem>
+                    <SelectItem value="poll">📊 So'rovnoma</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button variant="ghost" size="sm"><ImageIcon className="size-4" /></Button>

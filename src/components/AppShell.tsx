@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings } from "lucide-react";
+import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings, Wallet, Calendar } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
@@ -15,9 +15,11 @@ const NAV = [
   { to: "/groups", label: "Groups", icon: Users },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingBag },
   { to: "/sessions", label: "Sessions", icon: Video },
+  { to: "/events", label: "Events", icon: Calendar },
   { to: "/ai", label: "AI Advisor", icon: Sparkles },
   { to: "/universities", label: "Universities", icon: GraduationCap },
   { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/wallet", label: "Wallet", icon: Wallet },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
