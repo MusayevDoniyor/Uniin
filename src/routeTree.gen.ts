@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UniversitiesRouteImport } from './routes/universities'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -32,6 +33,11 @@ const UniversitiesRoute = UniversitiesRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SessionsRoute = SessionsRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/sessions': typeof SessionsRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/sessions': typeof SessionsRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
   '/sessions': typeof SessionsRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/sessions'
+    | '/settings'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/sessions'
+    | '/settings'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/onboarding'
     | '/sessions'
+    | '/settings'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
   SessionsRoute: typeof SessionsRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   UniversitiesRoute: typeof UniversitiesRoute
   ProfileIdRoute: typeof ProfileIdRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sessions': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
   SessionsRoute: SessionsRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   UniversitiesRoute: UniversitiesRoute,
   ProfileIdRoute: ProfileIdRoute,
@@ -334,3 +355,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
