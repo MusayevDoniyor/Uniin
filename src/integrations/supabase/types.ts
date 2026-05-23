@@ -529,6 +529,7 @@ export type Database = {
           certificates: string[] | null
           certifications: Json
           city: string | null
+          cover_image_url: string | null
           created_at: string | null
           dream_universities: string[] | null
           extracurriculars: string[] | null
@@ -560,6 +561,7 @@ export type Database = {
           certificates?: string[] | null
           certifications?: Json
           city?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           dream_universities?: string[] | null
           extracurriculars?: string[] | null
@@ -591,6 +593,7 @@ export type Database = {
           certificates?: string[] | null
           certifications?: Json
           city?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           dream_universities?: string[] | null
           extracurriculars?: string[] | null
