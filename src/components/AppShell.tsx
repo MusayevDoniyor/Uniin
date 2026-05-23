@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings, Wallet, Calendar } from "lucide-react";
+import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings, Wallet, Calendar, Crown } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
