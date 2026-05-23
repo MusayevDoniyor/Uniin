@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "./UserBadge";
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles, Link2, Pencil, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +9,23 @@ import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
 import { ReactionBar, REACTIONS } from "./ReactionBar";
 import { PollBlock } from "./PollBlock";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 
 type PostWithAuthor = {
   id: string; content: string; title?: string | null; media_urls: string[]; post_type: string;
@@ -51,7 +68,7 @@ function extractScoreChips(content: string): string[] {
   return out;
 }
 
-export function PostCard({ post }: { post: PostWithAuthor }) {
+export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?: (id: string) => void }) {
   const { user } = useAuth();
   const isGU = post.profiles.user_type === "gu";
   const [showComments, setShowComments] = useState(false);
@@ -62,6 +79,64 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [commentCount, setCommentCount] = useState(post.comments_count);
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Ownership: post.author_id is a profile id. Resolve current user's profile id.
+  const [myProfileId, setMyProfileId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) { setMyProfileId(null); return; }
+    supabase.from("profiles").select("id").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setMyProfileId(data?.id ?? null));
+  }, [user]);
+  const isOwner = !!myProfileId && myProfileId === post.author_id;
+
+  // Edit + delete state
+  const [content, setContent] = useState(post.content);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editValue, setEditValue] = useState(post.content);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
+  const copyLink = async () => {
+    const url = `${window.location.origin}/feed#post-${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Havola nusxalandi");
+    } catch {
+      toast.error("Nusxalab bo'lmadi");
+    }
+  };
+
+  const sharePost = async () => {
+    const url = `${window.location.origin}/feed#post-${post.id}`;
+    const shareData = { title: post.title || "Uniin post", text: post.content?.slice(0, 120) || "", url };
+    if (navigator.share) {
+      try { await navigator.share(shareData); return; } catch { /* user cancelled */ }
+    }
+    copyLink();
+  };
+
+  const saveEdit = async () => {
+    const text = editValue.trim();
+    if (!text) return;
+    setSavingEdit(true);
+    const { error } = await supabase.from("posts").update({ content: text }).eq("id", post.id);
+    setSavingEdit(false);
+    if (error) return toast.error(error.message);
+    setContent(text);
+    setEditOpen(false);
+    toast.success("Post yangilandi");
+  };
+
+  const deletePost = async () => {
+    const { error } = await supabase.from("posts").delete().eq("id", post.id);
+    if (error) return toast.error(error.message);
+    setConfirmDelete(false);
+    setDeleted(true);
+    toast.success("Post o'chirildi");
+    onDeleted?.(post.id);
+  };
+
 
   // Reaction counts summary
   const [reactCounts, setReactCounts] = useState<Record<string, number>>({});
@@ -145,8 +220,11 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const targetFlags = !isGU ? countriesToFlags(post.profiles.target_countries) : "";
   const postTypeMeta = POST_TYPE_LABEL[post.post_type] || POST_TYPE_LABEL.update;
 
+  if (deleted) return null;
+
   return (
-    <article className={`surface-card p-5 transition-colors ${isGU ? "gu-accent-border" : ""}`}>
+    <article id={`post-${post.id}`} className={`surface-card p-5 transition-colors ${isGU ? "gu-accent-border" : ""}`}>
+
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link to="/profile/$id" params={{ id: post.profiles.id }} className="shrink-0">
@@ -179,9 +257,33 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
           </div>
         </div>
-        <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-surface-2" aria-label="More">
-          <MoreHorizontal size={18} />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-surface-2" aria-label="More">
+              <MoreHorizontal size={18} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={copyLink}>
+              <Link2 size={14} className="mr-2" /> Havoladan nusxa olish
+            </DropdownMenuItem>
+            {isOwner && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setEditValue(content); setEditOpen(true); }}>
+                  <Pencil size={14} className="mr-2" /> Tahrirlash
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 size={14} className="mr-2" /> O'chirish
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </div>
 
       {/* Meta chip row — post type, major, target countries, score */}
@@ -217,11 +319,12 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
       {post.title && <h2 className="mt-3 text-lg font-display font-semibold">{post.title}</h2>}
 
       {/* Body */}
-      {post.content && (
+      {content && (
         <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
-          {post.content}
+          {content}
         </div>
       )}
+
 
       {/* Poll */}
       {post.post_type === "poll" && Array.isArray(post.poll_options) && post.poll_options.length > 0 && (
@@ -270,10 +373,11 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
             <MessageCircle className="size-[18px]" />
             <span className="hidden sm:inline">Izoh</span>
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors">
+          <button onClick={sharePost} className="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors">
             <Share2 className="size-[18px]" />
             <span className="hidden sm:inline">Ulashish</span>
           </button>
+
         </div>
       </div>
 
@@ -372,6 +476,44 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
           )}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Postni tahrirlash</DialogTitle>
+          </DialogHeader>
+          <textarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            rows={6}
+            className="w-full bg-surface-2 rounded-lg p-3 text-sm border border-border focus:outline-none focus:border-primary resize-none"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Bekor qilish</Button>
+            <Button onClick={saveEdit} disabled={savingEdit || !editValue.trim()}>
+              {savingEdit ? "Saqlanmoqda…" : "Saqlash"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Postni o'chirasizmi?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Bu amalni qaytarib bo'lmaydi. Post va unga tegishli izohlar o'chiriladi.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Bekor qilish</Button>
+            <Button variant="destructive" onClick={deletePost}>O'chirish</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </article>
+
   );
 }
