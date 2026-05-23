@@ -319,11 +319,12 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
       {post.title && <h2 className="mt-3 text-lg font-display font-semibold">{post.title}</h2>}
 
       {/* Body */}
-      {post.content && (
+      {content && (
         <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
-          {post.content}
+          {content}
         </div>
       )}
+
 
       {/* Poll */}
       {post.post_type === "poll" && Array.isArray(post.poll_options) && post.poll_options.length > 0 && (
