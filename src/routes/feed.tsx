@@ -82,19 +82,52 @@ function FeedPage() {
         <div className="flex gap-3">
           <Avatar className="size-10"><AvatarImage src={profile?.avatar_url || undefined} /><AvatarFallback>{profile?.full_name?.[0]}</AvatarFallback></Avatar>
           <div className="flex-1">
+            {postType === "poll" && (
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="So'rovnoma savoli..."
+                className="w-full bg-transparent border-0 focus:outline-none p-2 font-semibold text-base"
+              />
+            )}
             <Textarea value={content} onChange={e => setContent(e.target.value)}
-              placeholder="Share an update, tip, or question..." rows={2}
+              placeholder={postType === "poll" ? "Qo'shimcha tafsilot (ixtiyoriy)..." : "Share an update, tip, or question..."} rows={2}
               className="bg-transparent border-0 resize-none focus-visible:ring-0 p-2" />
-            {content && (
+
+            {postType === "poll" && (
+              <div className="space-y-2 mt-2 pt-2 border-t border-border">
+                {pollOptions.map((opt, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      value={opt}
+                      onChange={(e) => {
+                        const next = [...pollOptions]; next[i] = e.target.value; setPollOptions(next);
+                      }}
+                      placeholder={`Variant ${i + 1}`}
+                      className="flex-1 bg-surface-2 rounded-md px-3 py-2 text-sm border border-border focus:outline-none focus:border-primary"
+                    />
+                    {pollOptions.length > 2 && (
+                      <button type="button" onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))} className="text-xs text-muted-foreground hover:text-destructive px-2">✕</button>
+                    )}
+                  </div>
+                ))}
+                {pollOptions.length < 6 && (
+                  <button type="button" onClick={() => setPollOptions([...pollOptions, ""])} className="text-xs text-primary hover:underline">+ Variant qo'shish</button>
+                )}
+              </div>
+            )}
+
+            {(content || postType === "poll") && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
                 <Select value={postType} onValueChange={v => setPostType(v as any)}>
-                  <SelectTrigger className="w-36 h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="update">📝 Update</SelectItem>
                     <SelectItem value="question">❓ Question</SelectItem>
                     <SelectItem value="resource">📚 Resource</SelectItem>
                     <SelectItem value="win">🎉 Application Win</SelectItem>
                     <SelectItem value="essay_tip">✍️ Essay Tip</SelectItem>
+                    <SelectItem value="poll">📊 So'rovnoma</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button variant="ghost" size="sm"><ImageIcon className="size-4" /></Button>
