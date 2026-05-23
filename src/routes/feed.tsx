@@ -28,7 +28,7 @@ function FeedPage() {
   const load = async () => {
     const { data } = await supabase.from("posts")
       .select(`id, content, media_urls, post_type, likes_count, comments_count, created_at, author_id,
-        profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major)`)
+        profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
       .order("created_at", { ascending: false }).limit(50);
 
     // Enrich GU users with primary university
