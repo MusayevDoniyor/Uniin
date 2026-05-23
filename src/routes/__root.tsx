@@ -19,11 +19,32 @@ const OG_IMG = `${SITE_URL}/og-image.png`;
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <p className="mt-4 text-muted-foreground">This page doesn't exist.</p>
-        <a href="/" className="mt-6 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Go home</a>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 -left-32 size-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.55 0.20 27), transparent 70%)" }} />
+        <div className="absolute -bottom-32 -right-32 size-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.55 0.18 230), transparent 70%)" }} />
+      </div>
+      <div className="relative z-10 max-w-lg text-center">
+        <div className="inline-flex items-center justify-center mb-6">
+          <span className="text-[140px] font-black leading-none tracking-tighter bg-gradient-to-br from-primary via-foreground to-info bg-clip-text text-transparent select-none">
+            404
+          </span>
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Page not found</h2>
+        <p className="text-muted-foreground mb-8">
+          Looks like this page got lost on the way to university. Let's get you back on track.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <a href="/" className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-accent transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Go home
+          </a>
+          <a href="/feed" className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-5 py-2.5 text-sm font-medium hover:bg-surface-2 transition-colors">
+            Explore feed
+          </a>
+        </div>
       </div>
     </div>
   );

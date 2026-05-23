@@ -83,7 +83,10 @@ function ProfilePage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Header */}
       <div className="surface-card overflow-hidden">
-        <div className="h-32 md:h-48" style={{ background: isGU ? "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.30 0.10 60))" : "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.40 0.15 27))" }} />
+        <div className="h-32 md:h-56 bg-cover bg-center"
+          style={profile.cover_image_url
+            ? { backgroundImage: `url(${profile.cover_image_url})` }
+            : { background: isGU ? "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.55 0.15 75))" : "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.40 0.15 27))" }} />
         <div className="px-6 pb-6">
           <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-12">
             <Avatar className="size-24 border-4 border-card">
