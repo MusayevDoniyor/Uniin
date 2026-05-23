@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
-import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Sparkles, Eye, BarChart3, Zap, Shield } from "lucide-react";
+import { Check, Crown, Sparkles, Eye, BarChart3, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
 export const Route = createFileRoute("/premium")({
-  component: () => <RequireAuth><AppShell><Premium /></AppShell></RequireAuth>,
+  component: () => <RequireAuth><Premium /></RequireAuth>,
 });
 
 const FREE = [
