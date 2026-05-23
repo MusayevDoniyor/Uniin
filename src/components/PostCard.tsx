@@ -83,16 +83,6 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
     return () => { supabase.removeChannel(ch); };
   }, [showComments, post.id]);
 
-  const toggleLike = async () => {
-    if (!user) return;
-    if (liked) {
-      setLiked(false); setLikes((l) => l - 1);
-      await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", user.id);
-    } else {
-      setLiked(true); setLikes((l) => l + 1);
-      await supabase.from("post_likes").insert({ post_id: post.id, user_id: user.id });
-    }
-  };
 
   const loadComments = async () => {
     const next = !showComments;
