@@ -9,9 +9,13 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
+
+const SITE_URL = "https://uniin-pathways.lovable.app";
+const OG_IMG = `${SITE_URL}/og-image.png`;
 
 function NotFoundComponent() {
   return (
