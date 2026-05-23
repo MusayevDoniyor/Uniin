@@ -60,10 +60,12 @@ export function ReactionBar({ postId }: { postId: string }) {
   const current = REACTIONS.find((x) => x.type === mine);
 
   return (
-    <div className="relative">
+    <div
+      className="relative w-full"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       <button
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
         onClick={() => pick(mine || "like")}
         className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors w-full ${mine ? `${current?.color} font-semibold` : "text-muted-foreground"}`}
       >
@@ -72,21 +74,19 @@ export function ReactionBar({ postId }: { postId: string }) {
       </button>
 
       {open && (
-        <div
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-1 p-1.5 rounded-full bg-popover border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1 z-10"
-        >
-          {REACTIONS.map((r) => (
-            <button
-              key={r.type}
-              onClick={() => pick(r.type)}
-              title={r.label}
-              className={`size-10 rounded-full hover:bg-surface-2 flex items-center justify-center text-2xl transition-transform hover:scale-125 ${mine === r.type ? "bg-surface-2" : ""}`}
-            >
-              {r.emoji}
-            </button>
-          ))}
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-2 z-20">
+          <div className="flex items-center gap-1 p-1.5 rounded-full bg-popover border border-border shadow-xl animate-in fade-in slide-in-from-bottom-1">
+            {REACTIONS.map((r) => (
+              <button
+                key={r.type}
+                onClick={() => pick(r.type)}
+                title={r.label}
+                className={`size-10 rounded-full hover:bg-surface-2 flex items-center justify-center text-2xl transition-transform hover:scale-125 ${mine === r.type ? "bg-surface-2" : ""}`}
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

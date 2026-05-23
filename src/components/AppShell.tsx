@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -98,12 +99,15 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
               </Link>
             </div>
           </header>
-          <header className="hidden md:flex items-center justify-end gap-3 p-4 sticky top-0 bg-background/80 backdrop-blur z-20 border-b border-border">
-            <ThemeToggle />
-            <Link to="/notifications" className="relative p-2 hover:bg-surface rounded-lg">
-              <Bell className="size-5" />
-              {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center font-semibold">{unread}</span>}
-            </Link>
+          <header className="hidden md:flex items-center gap-4 p-4 sticky top-0 bg-background/80 backdrop-blur z-20 border-b border-border">
+            <GlobalSearch />
+            <div className="flex items-center gap-3 shrink-0">
+              <ThemeToggle />
+              <Link to="/notifications" className="relative p-2 hover:bg-surface rounded-lg">
+                <Bell className="size-5" />
+                {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center font-semibold">{unread}</span>}
+              </Link>
+            </div>
           </header>
           <div className="pb-20 md:pb-0">{children}</div>
         </main>
