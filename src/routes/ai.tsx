@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { PremiumGate } from "@/components/PremiumGate";
 
 export const Route = createFileRoute("/ai")({
   component: () => <RequireAuth><AIAdvisor /></RequireAuth>,
