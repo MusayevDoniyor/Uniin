@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
-import { ReactionBar } from "./ReactionBar";
+import { ReactionBar, REACTIONS } from "./ReactionBar";
 import { PollBlock } from "./PollBlock";
 
 type PostWithAuthor = {
@@ -62,6 +62,22 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [commentCount, setCommentCount] = useState(post.comments_count);
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Reaction counts summary
+  const [reactCounts, setReactCounts] = useState<Record<string, number>>({});
+  const reactTotal = Object.values(reactCounts).reduce((a, b) => a + b, 0);
+  const topReacts = Object.entries(reactCounts)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(1, 3);
+
+  useEffect(() => {
+    supabase.from("post_reactions").select("reaction").eq("post_id", post.id).then(({ data }) => {
+      const next: Record<string, number> = {};
+      (data || []).forEach((r: any) => { next[r.reaction] = (next[r.reaction] || 0) + 1; });
+      setReactCounts(next);
+    });
+  }, [post.id]);
 
   const toggleCommentLike = (id: string) =>
     setLikedComments((s) => ({ ...s, [id]: !s[id] }));
@@ -220,12 +236,26 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
-      {/* Counts strip (only comments now; reactions show their own counts) */}
-      {commentCount > 0 && (
-        <div className="flex items-center justify-end mt-3 text-xs text-muted-foreground">
-          <button onClick={loadComments} className="hover:underline">
-            {commentCount} ta izoh
-          </button>
+      {/* Counts strip — LinkedIn style: reactions left, comments right */}
+      {(reactTotal > 0 || commentCount > 0) && (
+        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+          {reactTotal > 1 && (
+            <div className="flex items-center gap-1.5">
+              <div className="flex -space-x-1">
+                {topReacts.map(([t]) => (
+                  <span key={t} className="size-5 rounded-full bg-surface-2 border border-border flex items-center justify-center text-[11px]">
+                    {REACTIONS.find((r) => r.type === t)?.emoji}
+                  </span>
+                ))}
+              </div>
+              <span>{reactTotal}</span>
+            </div>
+          )}
+          {commentCount > 0 && (
+            <button onClick={loadComments} className="hover:underline ml-auto">
+              {commentCount} ta izoh
+            </button>
+          )}
         </div>
       )}
 
