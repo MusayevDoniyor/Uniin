@@ -1,15 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "./UserBadge";
 import { Link } from "@tanstack/react-router";
-import { Heart, MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
+import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
+import { ReactionBar } from "./ReactionBar";
+import { PollBlock } from "./PollBlock";
 
 type PostWithAuthor = {
-  id: string; content: string; media_urls: string[]; post_type: string;
+  id: string; content: string; title?: string | null; media_urls: string[]; post_type: string;
+  poll_options?: string[] | null;
   likes_count: number; comments_count: number; created_at: string; author_id: string;
   profiles: {
     id: string; full_name: string; avatar_url: string | null;
@@ -26,6 +29,8 @@ const POST_TYPE_LABEL: Record<string, { label: string; tone: string }> = {
   question:  { label: "❓ Savol",       tone: "bg-info/15 text-info border-info/30" },
   resource:  { label: "📚 Resurs",      tone: "bg-primary/15 text-primary border-primary/30" },
   essay_tip: { label: "✍️ Essay tip",   tone: "bg-accent/15 text-accent-foreground border-accent/30" },
+  poll:      { label: "📊 So'rovnoma", tone: "bg-info/15 text-info border-info/30" },
+  article:   { label: "📰 Maqola",      tone: "bg-surface-2 text-foreground border-border" },
   update:    { label: "",                tone: "" },
 };
 
