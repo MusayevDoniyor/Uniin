@@ -286,8 +286,18 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
                 </div>
                 <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
                   <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
-                  <button className="hover:text-foreground font-medium">Like</button>
-                  <button className="hover:text-foreground font-medium">Reply</button>
+                  <button
+                    onClick={() => toggleCommentLike(c.id)}
+                    className={`hover:text-foreground font-medium ${likedComments[c.id] ? "text-primary" : ""}`}
+                  >
+                    Like
+                  </button>
+                  <button
+                    onClick={() => replyToComment(c.profiles?.full_name?.split(" ")[0])}
+                    className="hover:text-foreground font-medium"
+                  >
+                    Reply
+                  </button>
                 </div>
               </div>
             </div>
