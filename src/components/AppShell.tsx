@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut } from "lucide-react";
+import { Home, Compass, Users, ShoppingBag, Video, Sparkles, GraduationCap, MessageSquare, User, Bell, LogOut, Settings } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,6 +17,7 @@ const NAV = [
   { to: "/ai", label: "AI Advisor", icon: Sparkles },
   { to: "/universities", label: "Universities", icon: GraduationCap },
   { to: "/messages", label: "Messages", icon: MessageSquare },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children, rightSidebar }: { children: React.ReactNode; rightSidebar?: React.ReactNode }) {
@@ -73,13 +75,17 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
           {/* Top bar mobile */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background/80 backdrop-blur z-20">
             <Logo size="sm" />
-            <Link to="/notifications" className="relative">
-              <Bell className="size-5" />
-              {unread > 0 && <span className="absolute -top-1 -right-1 size-4 rounded-full bg-primary text-xs flex items-center justify-center">{unread}</span>}
-            </Link>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-surface">
+                <Bell className="size-5" />
+                {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center">{unread}</span>}
+              </Link>
+            </div>
           </header>
           {/* Top bar desktop */}
           <header className="hidden md:flex items-center justify-end gap-3 p-4 sticky top-0 bg-background/80 backdrop-blur z-20 border-b border-border">
+            <ThemeToggle />
             <Link to="/notifications" className="relative p-2 hover:bg-surface rounded-lg">
               <Bell className="size-5" />
               {unread > 0 && <span className="absolute top-1 right-1 size-4 rounded-full bg-primary text-[10px] flex items-center justify-center font-semibold">{unread}</span>}

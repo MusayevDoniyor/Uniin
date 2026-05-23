@@ -1,18 +1,22 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { PhoneInput, isValidUzPhone } from "@/components/PhoneInput";
+import { ScoreInput } from "@/components/ScoreInput";
+import { WordCountTextarea } from "@/components/WordCountTextarea";
+import { CertificateEditor, type Certification } from "@/components/CertificateEditor";
+import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
 import { Loader2, Upload, X, Plus, Search } from "lucide-react";
-import { CITIES, COUNTRIES, MAJORS, EXTRACURRICULARS, UNIVERSITIES } from "@/lib/data/universities";
+import { COUNTRIES, MAJORS, EXTRACURRICULARS, UNIVERSITIES } from "@/lib/data/universities";
 
 export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
@@ -21,8 +25,13 @@ export const Route = createFileRoute("/onboarding")({
 type Form = {
   full_name: string; avatar_url: string; city: string; phone: string;
   grade: string; target_year: number | null;
-  gpa: string; gpa_scale: number; sat: string; ielts: string; toefl: string; school_name: string;
-  extracurriculars: string[]; interests: string[]; bio: string; certificates: string[];
+  gpa: string; gpa_scale: number; gpa_na: boolean;
+  sat: string; sat_na: boolean;
+  ielts: string; ielts_na: boolean;
+  toefl: string; toefl_na: boolean;
+  school_name: string;
+  extracurriculars: string[]; extracurriculars_custom: string[];
+  interests: string[]; bio: string; certifications: Certification[];
   target_countries: string[]; dream_universities: string[]; intended_major: string;
   gu_unis: { university_name: string; country: string; qs_rank: number; year_admitted: number | null; degree_type: string; major: string }[];
 };
@@ -34,8 +43,14 @@ function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<Form>({
     full_name: profile?.full_name || "", avatar_url: "", city: "", phone: "",
-    grade: "", target_year: null, gpa: "", gpa_scale: 4.0, sat: "", ielts: "", toefl: "", school_name: "",
-    extracurriculars: [], interests: [], bio: "", certificates: [],
+    grade: "", target_year: null,
+    gpa: "", gpa_scale: 4.0, gpa_na: false,
+    sat: "", sat_na: false,
+    ielts: "", ielts_na: false,
+    toefl: "", toefl_na: false,
+    school_name: "",
+    extracurriculars: [], extracurriculars_custom: [],
+    interests: [], bio: "", certifications: [],
     target_countries: [], dream_universities: [], intended_major: "",
     gu_unis: [],
   });
@@ -67,7 +82,7 @@ function OnboardingPage() {
     const { error } = await supabase.storage.from(bucket).upload(path, file);
     if (error) { toast.error(error.message); return null; }
     const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
-    return bucket === "certificates" ? path : publicUrl;
+    return publicUrl;
   };
 
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,27 +91,20 @@ function OnboardingPage() {
     if (url) update({ avatar_url: url });
   };
 
-  const onCertUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (!files) return;
-    const urls: string[] = [];
-    for (const f of Array.from(files)) {
-      const u = await uploadFile(f, "certificates");
-      if (u) urls.push(u);
-    }
-    update({ certificates: [...form.certificates, ...urls] });
-  };
-
   const finish = async () => {
+    if (form.phone && !isValidUzPhone(form.phone)) return toast.error("Please enter a valid Uzbek phone number");
     setSubmitting(true);
+    const allExtras = [...form.extracurriculars, ...form.extracurriculars_custom];
     const { error } = await supabase.from("profiles").update({
       full_name: form.full_name, avatar_url: form.avatar_url || null, city: form.city, phone: form.phone,
       grade: form.grade || null, target_year: form.target_year,
-      gpa: form.gpa ? parseFloat(form.gpa) : null, gpa_scale: form.gpa_scale,
-      sat: form.sat ? parseInt(form.sat) : null,
-      ielts: form.ielts ? parseFloat(form.ielts) : null,
-      toefl: form.toefl ? parseInt(form.toefl) : null,
-      school_name: form.school_name, extracurriculars: form.extracurriculars,
-      interests: form.interests, bio: form.bio, certificates: form.certificates,
+      gpa: form.gpa_na || !form.gpa ? null : parseFloat(form.gpa), gpa_scale: form.gpa_scale,
+      sat: form.sat_na || !form.sat ? null : parseInt(form.sat),
+      ielts: form.ielts_na || !form.ielts ? null : parseFloat(form.ielts),
+      toefl: form.toefl_na || !form.toefl ? null : parseInt(form.toefl),
+      school_name: form.school_name, extracurriculars: allExtras,
+      interests: form.interests, bio: form.bio,
+      certifications: form.certifications as any,
       target_countries: form.target_countries, dream_universities: form.dream_universities,
       intended_major: form.intended_major || null,
       is_verified_gu: isGU, onboarding_complete: true,
@@ -116,7 +124,8 @@ function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-8" style={{ background: "radial-gradient(ellipse at top, oklch(0.30 0.10 265 / 0.3), oklch(0.18 0.03 260) 70%)" }}>
+    <div className="min-h-screen px-4 py-8 bg-background">
+      <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center mb-6"><Logo size="md" /></div>
         <div className="mb-6">
@@ -127,8 +136,8 @@ function OnboardingPage() {
         </div>
 
         <div className="surface-card p-8">
-          {isGU ? <GUSteps step={step} form={form} update={update} toggleArr={toggleArr} onAvatarChange={onAvatarChange} onCertUpload={onCertUpload} />
-                : <PrepSteps step={step} form={form} update={update} toggleArr={toggleArr} onAvatarChange={onAvatarChange} onCertUpload={onCertUpload} />}
+          {isGU ? <GUSteps step={step} form={form} update={update} toggleArr={toggleArr} onAvatarChange={onAvatarChange} />
+                : <PrepSteps step={step} form={form} update={update} toggleArr={toggleArr} onAvatarChange={onAvatarChange} />}
 
           <div className="flex gap-2 mt-8">
             {step > 1 && <Button variant="outline" onClick={() => setStep(s => s - 1)}>Back</Button>}
@@ -162,14 +171,13 @@ function PickType({ onPicked, userId }: { onPicked: () => void; userId: string }
 function computeRank(f: Form, isGU: boolean): number {
   let score = 0;
   if (isGU && f.gu_unis[0]?.qs_rank) score += Math.max(0, 200 - f.gu_unis[0].qs_rank);
-  if (f.gpa) score += parseFloat(f.gpa) / f.gpa_scale * 30;
-  if (f.sat) score += (parseInt(f.sat) / 1600) * 30;
-  if (f.ielts) score += (parseFloat(f.ielts) / 9) * 20;
-  score += f.extracurriculars.length * 3;
+  if (f.gpa && !f.gpa_na) score += parseFloat(f.gpa) / f.gpa_scale * 30;
+  if (f.sat && !f.sat_na) score += (parseInt(f.sat) / 1600) * 30;
+  if (f.ielts && !f.ielts_na) score += (parseFloat(f.ielts) / 9) * 20;
+  score += (f.extracurriculars.length + f.extracurriculars_custom.length) * 3;
   return Math.round(score);
 }
 
-// ---------- G.U. steps ----------
 function GUSteps(props: any) {
   const { step } = props;
   if (step === 1) return <PersonalInfo {...props} showGradeYear={false} />;
@@ -179,14 +187,13 @@ function GUSteps(props: any) {
   return null;
 }
 
-// ---------- Prep steps ----------
 function PrepSteps(props: any) {
   const { step } = props;
   if (step === 1) return <PersonalInfo {...props} showGradeYear />;
   if (step === 2) return <AcademicStats {...props} prep />;
-  if (step === 3) return <SkillsExtras {...props} bioPrompt="Describe your goal" skipCerts />;
+  if (step === 3) return <SkillsExtras {...props} bioPrompt="Describe your goal" />;
   if (step === 4) return <TargetUnis {...props} />;
-  if (step === 5) return <CertsOnly {...props} />;
+  if (step === 5) return <CertsStep {...props} />;
   return null;
 }
 
@@ -209,21 +216,23 @@ function PersonalInfo({ form, update, onAvatarChange, showGradeYear }: any) {
 
       <div>
         <Label>Full name</Label>
-        <Input value={form.full_name} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" />
+        <Input value={form.full_name} maxLength={80} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <Label>City</Label>
+          <Label>City / district</Label>
           <Select value={form.city} onValueChange={v => update({ city: v })}>
-            <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select city" /></SelectTrigger>
-            <SelectContent>{CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+            <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select your city" /></SelectTrigger>
+            <SelectContent className="max-h-72">{UZ_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div>
           <Label>Phone</Label>
-          <Input value={form.phone} onChange={e => update({ phone: e.target.value })} className="mt-1.5" placeholder="+998..." />
+          <PhoneInput value={form.phone} onChange={v => update({ phone: v })} className="mt-1.5" />
         </div>
       </div>
+
       {showGradeYear && (
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -235,7 +244,7 @@ function PersonalInfo({ form, update, onAvatarChange, showGradeYear }: any) {
           </div>
           <div>
             <Label>Target application year</Label>
-            <Input type="number" value={form.target_year || ""} onChange={e => update({ target_year: e.target.value ? parseInt(e.target.value) : null })} className="mt-1.5" placeholder="2026" />
+            <Input type="number" min={2024} max={2035} value={form.target_year || ""} onChange={e => update({ target_year: e.target.value ? parseInt(e.target.value) : null })} className="mt-1.5" placeholder="2026" />
           </div>
         </div>
       )}
@@ -266,7 +275,7 @@ function UniversityPicker({ form, update }: any) {
       {form.gu_unis.length > 0 && (
         <div className="space-y-2">
           {form.gu_unis.map((u: any, i: number) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-lg surface-card border-gold/30">
+            <div key={i} className="flex items-center justify-between p-3 surface-card gu-accent-border">
               <div>
                 <div className="font-semibold flex items-center gap-2"><span className="text-gold">🎓</span> {u.university_name}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{u.country} · {u.degree_type} {u.major && `in ${u.major}`} {u.year_admitted && `· ${u.year_admitted}`}</div>
@@ -304,7 +313,7 @@ function UniversityPicker({ form, update }: any) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Year admitted</Label>
-              <Input type="number" value={year} onChange={e => setYear(e.target.value)} className="mt-1.5" placeholder="2024" />
+              <Input type="number" min={2000} max={2035} value={year} onChange={e => setYear(e.target.value)} className="mt-1.5" placeholder="2024" />
             </div>
             <div>
               <Label>Degree</Label>
@@ -316,7 +325,7 @@ function UniversityPicker({ form, update }: any) {
           </div>
           <div>
             <Label>Major / faculty</Label>
-            <Input value={major} onChange={e => setMajor(e.target.value)} className="mt-1.5" placeholder="e.g. Computer Science" />
+            <Input value={major} maxLength={60} onChange={e => setMajor(e.target.value)} className="mt-1.5" placeholder="e.g. Computer Science" />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setAdding(null)}>Cancel</Button>
@@ -329,23 +338,36 @@ function UniversityPicker({ form, update }: any) {
 }
 
 function AcademicStats({ form, update, prep }: any) {
+  const gpaMax = form.gpa_scale === 5 ? 5.0 : 4.0;
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Academic stats</h2>
-      <p className="text-sm text-muted-foreground">{prep ? "Where do you stand today?" : "Your record speaks for you."}</p>
+      <p className="text-sm text-muted-foreground">
+        {prep ? "Where do you stand today? You can mark anything you haven't taken yet." : "Your record speaks for you. Toggle off what doesn't apply."}
+      </p>
 
       <div>
-        <Label>School name (in Uzbekistan)</Label>
-        <Input value={form.school_name} onChange={e => update({ school_name: e.target.value })} className="mt-1.5" />
+        <Label>School / lyceum name</Label>
+        <Input value={form.school_name} maxLength={100} onChange={e => update({ school_name: e.target.value })} className="mt-1.5" />
       </div>
 
-      <div className="grid grid-cols-3 gap-3 items-end">
-        <div className="col-span-2">
-          <Label>GPA</Label>
-          <Input value={form.gpa} onChange={e => update({ gpa: e.target.value })} className="mt-1.5" placeholder="e.g. 3.8 or 4.7" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+        <div className="sm:col-span-2">
+          <ScoreInput
+            label="GPA"
+            value={form.gpa}
+            onChange={v => update({ gpa: v })}
+            min={0}
+            max={gpaMax}
+            step={0.01}
+            placeholder={`e.g. 3.8 (max ${gpaMax})`}
+            notTaken={form.gpa_na}
+            onToggleNotTaken={v => update({ gpa_na: v })}
+            suffix={`/${gpaMax}`}
+          />
         </div>
         <div>
-          <Label>Scale</Label>
+          <Label className="text-xs font-semibold">Scale</Label>
           <Select value={String(form.gpa_scale)} onValueChange={v => update({ gpa_scale: parseFloat(v) })}>
             <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="4">/4.0</SelectItem><SelectItem value="5">/5.0</SelectItem></SelectContent>
@@ -353,45 +375,64 @@ function AcademicStats({ form, update, prep }: any) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <Label>SAT</Label>
-          <Input value={form.sat} onChange={e => update({ sat: e.target.value })} className="mt-1.5" placeholder="1500" />
-        </div>
-        <div>
-          <Label>IELTS</Label>
-          <Input value={form.ielts} onChange={e => update({ ielts: e.target.value })} className="mt-1.5" placeholder="7.5" />
-        </div>
-        <div>
-          <Label>TOEFL</Label>
-          <Input value={form.toefl} onChange={e => update({ toefl: e.target.value })} className="mt-1.5" placeholder="105" />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <ScoreInput label="SAT" value={form.sat} onChange={v => update({ sat: v })}
+          min={400} max={1600} placeholder="1500"
+          notTaken={form.sat_na} onToggleNotTaken={v => update({ sat_na: v })} />
+        <ScoreInput label="IELTS" value={form.ielts} onChange={v => update({ ielts: v })}
+          min={0} max={9} step={0.5} placeholder="7.5" suffix="/9"
+          notTaken={form.ielts_na} onToggleNotTaken={v => update({ ielts_na: v })} />
+        <ScoreInput label="TOEFL" value={form.toefl} onChange={v => update({ toefl: v })}
+          min={0} max={120} placeholder="105" suffix="/120"
+          notTaken={form.toefl_na} onToggleNotTaken={v => update({ toefl_na: v })} />
       </div>
     </div>
   );
 }
 
-function SkillsExtras({ form, update, toggleArr, onCertUpload, bioPrompt, skipCerts }: any) {
+function SkillsExtras({ form, update, toggleArr, bioPrompt }: any) {
   const [interest, setInterest] = useState("");
+  const [customEC, setCustomEC] = useState("");
+
+  const addCustomEC = () => {
+    const v = customEC.trim();
+    if (!v) return;
+    if ([...form.extracurriculars, ...form.extracurriculars_custom].includes(v)) { setCustomEC(""); return; }
+    update({ extracurriculars_custom: [...form.extracurriculars_custom, v] });
+    setCustomEC("");
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <h2 className="text-2xl font-bold">Skills & extras</h2>
       <p className="text-sm text-muted-foreground">What makes you, you.</p>
 
       <div>
         <Label>Extracurriculars</Label>
         <div className="flex flex-wrap gap-2 mt-1.5">
-          {EXTRACURRICULARS.map(ec => (
+          {EXTRACURRICULARS.map((ec: string) => (
             <button key={ec} onClick={() => toggleArr("extracurriculars", ec)} type="button"
               className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${form.extracurriculars.includes(ec) ? "bg-primary border-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}>{ec}</button>
           ))}
+          {form.extracurriculars_custom.map((ec: string, i: number) => (
+            <span key={`c-${i}`} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-info/15 text-info border border-info/30">
+              {ec}
+              <button type="button" onClick={() => update({ extracurriculars_custom: form.extracurriculars_custom.filter((_: string, j: number) => j !== i) })}><X className="size-3" /></button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-3">
+          <Input value={customEC} onChange={e => setCustomEC(e.target.value)} maxLength={40}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustomEC(); } }}
+            placeholder="Other: add your own (e.g. Robotics club)" />
+          <Button type="button" variant="outline" onClick={addCustomEC}><Plus className="size-4" /></Button>
         </div>
       </div>
 
       <div>
-        <Label>Interests & skills (press Enter to add)</Label>
+        <Label>Interests & skills (Enter to add)</Label>
         <div className="flex gap-2 mt-1.5">
-          <Input value={interest} onChange={e => setInterest(e.target.value)}
+          <Input value={interest} maxLength={30} onChange={e => setInterest(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (interest.trim()) { update({ interests: [...form.interests, interest.trim()] }); setInterest(""); } } }}
             placeholder="e.g. Machine learning" />
           <Button type="button" variant="outline" onClick={() => { if (interest.trim()) { update({ interests: [...form.interests, interest.trim()] }); setInterest(""); } }}>Add</Button>
@@ -405,23 +446,14 @@ function SkillsExtras({ form, update, toggleArr, onCertUpload, bioPrompt, skipCe
         </div>
       </div>
 
-      <div>
-        <Label>Short bio ({form.bio.length}/300)</Label>
-        <Textarea maxLength={300} value={form.bio} onChange={e => update({ bio: e.target.value })} className="mt-1.5" placeholder={bioPrompt} rows={3} />
-      </div>
-
-      {!skipCerts && (
-        <div>
-          <Label>Certificates (optional)</Label>
-          <Label className="mt-1.5 cursor-pointer block">
-            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center text-sm text-muted-foreground hover:border-primary/50">
-              <Upload className="size-5 mx-auto mb-1" /> Upload files (PDF/image)
-            </div>
-            <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={onCertUpload} />
-          </Label>
-          {form.certificates.length > 0 && <p className="text-xs text-muted-foreground mt-2">{form.certificates.length} file(s) uploaded</p>}
-        </div>
-      )}
+      <WordCountTextarea
+        label="Short bio"
+        value={form.bio}
+        onChange={v => update({ bio: v })}
+        maxWords={80}
+        rows={4}
+        placeholder={bioPrompt}
+      />
     </div>
   );
 }
@@ -436,7 +468,7 @@ function TargetUnis({ form, update, toggleArr }: any) {
       <div>
         <Label>Target countries</Label>
         <div className="flex flex-wrap gap-2 mt-1.5">
-          {COUNTRIES.map(c => (
+          {COUNTRIES.map((c: any) => (
             <button key={c.code} type="button" onClick={() => toggleArr("target_countries", c.code)}
               className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${form.target_countries.includes(c.code) ? "bg-info border-info text-white" : "border-border hover:border-info/50"}`}>
               {c.flag} {c.name}
@@ -448,7 +480,7 @@ function TargetUnis({ form, update, toggleArr }: any) {
       <div>
         <Label>Dream universities (type and add)</Label>
         <div className="flex gap-2 mt-1.5">
-          <Input value={uni} onChange={e => setUni(e.target.value)}
+          <Input value={uni} maxLength={80} onChange={e => setUni(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (uni.trim()) { update({ dream_universities: [...form.dream_universities, uni.trim()] }); setUni(""); } } }}
             placeholder="e.g. MIT" />
           <Button type="button" variant="outline" onClick={() => { if (uni.trim()) { update({ dream_universities: [...form.dream_universities, uni.trim()] }); setUni(""); } }}><Plus className="size-4" /></Button>
@@ -466,29 +498,19 @@ function TargetUnis({ form, update, toggleArr }: any) {
         <Label>Intended major</Label>
         <Select value={form.intended_major} onValueChange={v => update({ intended_major: v })}>
           <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick a major" /></SelectTrigger>
-          <SelectContent>{MAJORS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+          <SelectContent>{MAJORS.map((m: string) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
         </Select>
       </div>
     </div>
   );
 }
 
-function CertsOnly({ form, onCertUpload }: any) {
+function CertsStep({ form, update }: any) {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Certificates</h2>
-      <p className="text-sm text-muted-foreground">Show your achievements. Optional but encouraged.</p>
-      <Label className="cursor-pointer block">
-        <div className="border-2 border-dashed border-border rounded-lg p-8 text-center text-sm text-muted-foreground hover:border-primary/50">
-          <Upload className="size-8 mx-auto mb-2 text-primary" />
-          <div className="font-medium text-foreground">Click to upload</div>
-          <div className="text-xs mt-1">PDF or image files, multiple allowed</div>
-        </div>
-        <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={onCertUpload} />
-      </Label>
-      {form.certificates.length > 0 && (
-        <div className="text-sm text-success">✓ {form.certificates.length} file(s) uploaded</div>
-      )}
+      <h2 className="text-2xl font-bold">Certifications</h2>
+      <p className="text-sm text-muted-foreground">Add credentials LinkedIn-style — name, issuer, and date. You can always add more from your profile later.</p>
+      <CertificateEditor value={form.certifications} onChange={v => update({ certifications: v })} />
     </div>
   );
 }

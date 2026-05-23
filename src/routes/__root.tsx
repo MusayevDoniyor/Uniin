@@ -9,9 +9,13 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
+
+const SITE_URL = "https://uniin-pathways.lovable.app";
+const OG_IMG = `${SITE_URL}/og-image.png`;
 
 function NotFoundComponent() {
   return (
@@ -47,18 +51,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0F172A" },
       { title: "Uniin — College prep for ambitious Uzbek students" },
-      { name: "description", content: "The community platform where Uzbek students preparing for top universities abroad connect with G.U. mentors who've already gotten in." },
-      { property: "og:title", content: "Uniin — College prep for ambitious Uzbek students" },
-      { property: "og:description", content: "The community platform where Uzbek students preparing for top universities abroad connect with G.U. mentors who've already gotten in." },
-      { name: "twitter:title", content: "Uniin — College prep for ambitious Uzbek students" },
-      { name: "twitter:description", content: "The community platform where Uzbek students preparing for top universities abroad connect with G.U. mentors who've already gotten in." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/10c7de15-7e88-4a94-b34b-fc0ba6a1d8b6/id-preview-03df335c--0564ce22-cb41-4d68-a298-7a53d28e30f9.lovable.app-1779568945998.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/10c7de15-7e88-4a94-b34b-fc0ba6a1d8b6/id-preview-03df335c--0564ce22-cb41-4d68-a298-7a53d28e30f9.lovable.app-1779568945998.png" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { name: "description", content: "Uniin is the community platform where Uzbek students preparing for top universities abroad connect with G.U. mentors who've already gotten in. AI advisor, marketplace, sessions, and verified alumni." },
+      { name: "keywords", content: "Uniin, Uzbekistan students, university abroad, college prep, SAT, IELTS, TOEFL, scholarships, El-Yurt Umidi, Chevening, study abroad" },
+      { name: "author", content: "Uniin" },
+      { property: "og:site_name", content: "Uniin" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:title", content: "Uniin — College prep for ambitious Uzbek students" },
+      { property: "og:description", content: "Connect with verified Uzbek students at top universities abroad. AI advisor, mentor marketplace, 1:1 sessions." },
+      { property: "og:image", content: OG_IMG },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Uniin — College prep for ambitious Uzbek students" },
+      { name: "twitter:description", content: "Connect with verified Uzbek students at top universities abroad." },
+      { name: "twitter:image", content: OG_IMG },
     ],
     links: [
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
+      { rel: "canonical", href: SITE_URL },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -73,8 +85,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <head><HeadContent /></head>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('uniin-theme')||'dark';document.documentElement.classList.add(t);document.documentElement.style.colorScheme=t;}catch(e){document.documentElement.classList.add('dark');}})();`,
+          }}
+        />
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
@@ -94,10 +113,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster position="top-right" />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster position="top-right" />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

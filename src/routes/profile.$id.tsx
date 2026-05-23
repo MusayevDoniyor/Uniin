@@ -176,12 +176,20 @@ function ProfilePage() {
             </Section>
           )}
 
-          {profile.certificates?.length > 0 && (
-            <Section title="Certificates">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {profile.certificates.map((c: string, i: number) => (
-                  <div key={i} className="p-3 surface-card flex items-center gap-2 text-sm">
-                    <FileText className="size-4 text-primary" /> Certificate {i + 1}
+          {(profile.certifications as any[])?.length > 0 && (
+            <Section title="Certifications">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(profile.certifications as any[]).map((c: any, i: number) => (
+                  <div key={i} className="p-3 surface-card flex items-start gap-3">
+                    <div className="size-10 rounded-md bg-gold/15 text-gold flex items-center justify-center shrink-0">
+                      <FileText className="size-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm truncate">{c.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{c.issuer}</div>
+                      {c.issue_date && <div className="text-[11px] text-muted-foreground mt-0.5">{c.issue_date}</div>}
+                      {c.credential_url && <a href={c.credential_url} target="_blank" rel="noreferrer" className="text-[11px] text-info hover:underline">View credential →</a>}
+                    </div>
                   </div>
                 ))}
               </div>

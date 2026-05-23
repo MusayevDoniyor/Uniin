@@ -5,6 +5,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { Loader2, Mail } from "lucide-react";
 
@@ -38,6 +40,7 @@ function LoginPage() {
       <div className="absolute inset-0 opacity-20"
         style={{ backgroundImage: "radial-gradient(circle at 25% 30%, oklch(0.55 0.18 27 / 0.4), transparent 50%)" }} />
 
+      <div className="absolute top-4 right-4 z-10"><ThemeToggle /></div>
       <div className="relative w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Logo size="lg" />
@@ -55,7 +58,7 @@ function LoginPage() {
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)}
+              <PasswordInput id="password" required value={password} onChange={e => setPassword(e.target.value)}
                 className="mt-1.5" placeholder="••••••••" />
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-accent" disabled={loading}>
