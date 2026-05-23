@@ -43,7 +43,7 @@ function Premium() {
     await supabase.from("profiles").update({ is_premium: true }).eq("user_id", user.id);
     setBusy(false);
     toast.success("Welcome to Uniin Premium! 🎉");
-    if (refresh) await refresh();
+    if (refreshProfile) await refreshProfile();
     navigate({ to: "/feed" });
   };
 
