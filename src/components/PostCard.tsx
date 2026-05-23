@@ -236,12 +236,26 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
-      {/* Counts strip (only comments now; reactions show their own counts) */}
-      {commentCount > 0 && (
-        <div className="flex items-center justify-end mt-3 text-xs text-muted-foreground">
-          <button onClick={loadComments} className="hover:underline">
-            {commentCount} ta izoh
-          </button>
+      {/* Counts strip — LinkedIn style: reactions left, comments right */}
+      {(reactTotal > 0 || commentCount > 0) && (
+        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+          {reactTotal > 1 && (
+            <div className="flex items-center gap-1.5">
+              <div className="flex -space-x-1">
+                {topReacts.map(([t]) => (
+                  <span key={t} className="size-5 rounded-full bg-surface-2 border border-border flex items-center justify-center text-[11px]">
+                    {REACTIONS.find((r) => r.type === t)?.emoji}
+                  </span>
+                ))}
+              </div>
+              <span>{reactTotal}</span>
+            </div>
+          )}
+          {commentCount > 0 && (
+            <button onClick={loadComments} className="hover:underline ml-auto">
+              {commentCount} ta izoh
+            </button>
+          )}
         </div>
       )}
 
