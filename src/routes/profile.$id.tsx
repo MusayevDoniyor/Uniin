@@ -82,42 +82,69 @@ function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="surface-card overflow-hidden">
-        <div className="h-32 md:h-56 bg-cover bg-center"
+      <div className="surface-card overflow-hidden relative">
+        {/* Cover image / gradient */}
+        <div className="h-44 md:h-72 bg-cover bg-center relative"
           style={profile.cover_image_url
             ? { backgroundImage: `url(${profile.cover_image_url})` }
-            : { background: isGU ? "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.55 0.15 75))" : "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.40 0.15 27))" }} />
-        <div className="px-6 pb-6">
-          <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-12">
-            <Avatar className="size-24 border-4 border-card">
-              <AvatarImage src={profile.avatar_url} />
-              <AvatarFallback className="text-2xl">{profile.full_name?.[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
+            : { background: isGU
+                ? "linear-gradient(135deg, oklch(0.15 0.08 265) 0%, oklch(0.25 0.12 255) 40%, oklch(1 0.05 75) 100%)"
+                : "linear-gradient(135deg, oklch(0.12 0.06 265) 0%, oklch(0.22 0.10 265) 40%, oklch(0.42 0.18 27) 100%)" }}>
+          {/* Bottom fade overlay for readability */}
+          <div className="absolute inset-1" style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.08 0.03 260 / 0.85) 100%)" }} />
+          {/* Subtle pattern overlay */}
+          {!profile.cover_image_url && (
+            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, oklch(1 0 0 / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 70%, oklch(1 0 0 /  0.2) 0%, transparent 50%)" }} />
+          )}
+        </div>
+
+        <div className="px-5 md:px-8 pb-6 relative">
+          <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-16 md:-mt-20">
+            {/* Avatar */}
+            <div className="relative shrink-1">
+              <Avatar className="size-24 md:size-28 border-[5px] border-card shadow-xl ring-1 ring-white/10">
+                <AvatarImage src={profile.avatar_url} />
+                <AvatarFallback className="text-2xl md:text-3xl font-display bg-navy-deep text-gold">{profile.full_name?.[1] || profile.full_name?.[1]}</AvatarFallback>
+              </Avatar>
+              {isGU && (
+                <div className="absolute -bottom-1.5 -right-1.5 size-7 rounded-full bg-gold text-gold-foreground flex items-center justify-center border-[3px] border-card shadow-md">
+                  <GraduationCap className="size-4" />
+                </div>
+              )}
+            </div>
+
+            {/* Name & Info */}
+            <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold">{profile.full_name}</h1>
+                <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{profile.full_name}</h1>
                 <UserBadge type={profile.user_type} />
               </div>
               {isGU && primaryUni && (
-                <div className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-gold">
-                  <GraduationCap className="size-4" /> {primaryUni.university_name} · {primaryUni.major || primaryUni.degree_type}
+                <div className="mt-1.5 inline-flex items-center gap-2 text-sm md:text-base font-medium text-gold">
+                  <GraduationCap className="size-4 shrink-0" /> {primaryUni.university_name} · {primaryUni.major || primaryUni.degree_type}
                 </div>
               )}
               {!isGU && profile.intended_major && (
-                <div className="mt-1 text-sm text-info">Targeting {profile.intended_major} {profile.target_countries?.length ? `· ${profile.target_countries.join(", ")}` : ""}</div>
+                <div className="mt-1.5 text-sm md:text-base text-info">Targeting {profile.intended_major} {profile.target_countries?.length ? `· ${profile.target_countries.join(", ")}` : ""}</div>
               )}
-              {profile.city && <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><MapPin className="size-3" /> {profile.city}</div>}
+              {profile.city && (
+                <div className="text-xs md:text-sm text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                  <MapPin className="size-3.5 shrink-0" /> {profile.city}
+                </div>
+              )}
             </div>
+
+            {/* Actions */}
             {!isMe && (
-              <div className="flex gap-2">
-                <Button onClick={toggleFollow} variant={following ? "outline" : "default"} className={following ? "" : "bg-primary hover:bg-accent"}>
+              <div className="flex gap-2 mt-2 md:mt-0">
+                <Button onClick={toggleFollow} variant={following ? "outline" : "default"} className={following ? "" : "bg-primary hover:bg-accent shadow-lg"}>
                   {following ? <><UserCheck className="size-4 mr-1.5" /> Following</> : <><UserPlus className="size-4 mr-1.5" /> Follow</>}
                 </Button>
-                <Button onClick={startDM} variant="outline"><MessageSquare className="size-4 mr-1.5" /> Message</Button>
-                {isGU && <Button variant="outline"><Video className="size-4 mr-1.5" /> Book session</Button>}
+                <Button onClick={startDM} variant="outline" className="shadow-lg"><MessageSquare className="size-4 mr-1.5" /> Message</Button>
+                {isGU && <Button variant="outline" className="shadow-lg"><Video className="size-4 mr-1.5" /> Book session</Button>}
               </div>
             )}
-          </div>
+          </<div>
         </div>
       </div>
 
