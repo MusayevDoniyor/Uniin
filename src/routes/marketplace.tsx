@@ -109,8 +109,38 @@ function Marketplace() {
 
   const buy = async (l: any) => {
     if (!user) return;
-    await supabase.from("listing_purchases").insert({ listing_id: l.id, buyer_id: user.id, amount_usd: l.price_usd });
-    toast.info("Payment coming soon — purchase request created. Seller will be notified.");
+    if (l.is_free) {
+      await supabase.from("listing_purchases").insert({ listing_id: l.id, buyer_id: user.id, amount_usd: 0, status: "completed" as any });
+      toast.success("Unlocked! Check Wallet for receipt.");
+      setActive(null);
+      return;
+    }
+    const amount = Number(l.price_usd);
+    // Ensure wallet exists
+    let { data: wallet } = await supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle();
+    if (!wallet) {
+      const { data: w } = await supabase.from("wallets").insert({ user_id: user.id }).select().single();
+      wallet = w;
+    }
+    if (!wallet || Number(wallet.balance_usd) < amount) {
+      toast.error("Insufficient balance. Top up your wallet first.");
+      window.location.href = "/wallet";
+      return;
+    }
+    const platformFee = +(amount * 0.1).toFixed(2);
+    const sellerPayout = +(amount - platformFee).toFixed(2);
+    // Deduct from buyer balance, create escrow holding seller payout
+    const { error: e1 } = await supabase.from("wallets").update({ balance_usd: Number(wallet.balance_usd) - amount }).eq("user_id", user.id);
+    if (e1) return toast.error(e1.message);
+    const { error: e2 } = await supabase.from("escrow_transactions").insert({
+      buyer_id: user.id, seller_id: l.seller_id, listing_id: l.id,
+      amount_usd: amount, platform_fee_usd: platformFee, seller_payout_usd: sellerPayout,
+    });
+    if (e2) return toast.error(e2.message);
+    await supabase.from("listing_purchases").insert({ listing_id: l.id, buyer_id: user.id, amount_usd: amount, status: "completed" as any });
+    await supabase.from("notifications").insert({ user_id: user.id, type: "purchase", content: `Escrow opened for "${l.title}". Funds release in 7 days.` });
+    toast.success("Purchase complete — funds held in escrow for 7 days.");
+    setActive(null);
   };
 
   const filtered = filter === "all" ? listings : listings.filter(l => l.listing_type === filter);
