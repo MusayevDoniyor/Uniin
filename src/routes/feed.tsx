@@ -22,12 +22,14 @@ function FeedPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState<"update" | "question" | "resource" | "win" | "essay_tip">("update");
+  const [title, setTitle] = useState("");
+  const [postType, setPostType] = useState<"update" | "question" | "resource" | "win" | "essay_tip" | "poll">("update");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [posting, setPosting] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("posts")
-      .select(`id, content, media_urls, post_type, likes_count, comments_count, created_at, author_id,
+      .select(`id, content, title, media_urls, post_type, poll_options, likes_count, comments_count, created_at, author_id,
         profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
       .order("created_at", { ascending: false }).limit(50);
 
@@ -52,14 +54,24 @@ function FeedPage() {
   }, []);
 
   const submitPost = async () => {
-    if (!content.trim() || !profile) return;
+    if (!profile) return;
+    const isPoll = postType === "poll";
+    const cleanOpts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (isPoll) {
+      if (!title.trim()) return toast.error("So'rovnoma uchun savol kerak");
+      if (cleanOpts.length < 2) return toast.error("Kamida 2 ta variant kerak");
+    } else if (!content.trim()) return;
     setPosting(true);
     const { error } = await supabase.from("posts").insert({
-      author_id: profile.id, content: content.trim(), post_type: postType,
+      author_id: profile.id,
+      content: isPoll ? (content.trim() || title.trim()) : content.trim(),
+      title: title.trim() || null,
+      post_type: postType,
+      poll_options: isPoll ? cleanOpts : null,
     });
     setPosting(false);
     if (error) return toast.error(error.message);
-    setContent(""); setPostType("update");
+    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]);
     toast.success("Posted!");
   };
 
