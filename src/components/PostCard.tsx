@@ -60,7 +60,16 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count);
+  const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const toggleCommentLike = (id: string) =>
+    setLikedComments((s) => ({ ...s, [id]: !s[id] }));
+
+  const replyToComment = (name?: string) => {
+    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} ${v}`));
+    setTimeout(() => inputRef.current?.focus(), 30);
+  };
 
   // Realtime comment subscription whenever comments are open
   useEffect(() => {
@@ -220,20 +229,22 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
-      {/* Action bar */}
-      <div className="grid grid-cols-3 mt-2 pt-2 border-t border-border text-sm text-muted-foreground gap-1">
-        <ReactionBar postId={post.id} />
-        <button
-          onClick={loadComments}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors ${showComments ? "text-foreground font-semibold" : ""}`}
-        >
-          <MessageCircle className="size-4" />
-          <span>Izoh</span>
-        </button>
-        <button className="flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors">
-          <Share2 className="size-4" />
-          <span>Ulashish</span>
-        </button>
+      {/* Action bar — LinkedIn style: equally spaced, breathing room */}
+      <div className="mt-2 pt-1 border-t border-border">
+        <div className="flex items-stretch justify-between gap-1 sm:gap-2 text-sm text-muted-foreground">
+          <div className="flex-1 min-w-0"><ReactionBar postId={post.id} /></div>
+          <button
+            onClick={loadComments}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors ${showComments ? "text-foreground font-semibold" : ""}`}
+          >
+            <MessageCircle className="size-[18px]" />
+            <span className="hidden sm:inline">Izoh</span>
+          </button>
+          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors">
+            <Share2 className="size-[18px]" />
+            <span className="hidden sm:inline">Ulashish</span>
+          </button>
+        </div>
       </div>
 
       {/* Comments */}
@@ -275,8 +286,18 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
                 </div>
                 <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
                   <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
-                  <button className="hover:text-foreground font-medium">Like</button>
-                  <button className="hover:text-foreground font-medium">Reply</button>
+                  <button
+                    onClick={() => toggleCommentLike(c.id)}
+                    className={`hover:text-foreground font-medium ${likedComments[c.id] ? "text-primary" : ""}`}
+                  >
+                    Like
+                  </button>
+                  <button
+                    onClick={() => replyToComment(c.profiles?.full_name?.split(" ")[0])}
+                    className="hover:text-foreground font-medium"
+                  >
+                    Reply
+                  </button>
                 </div>
               </div>
             </div>
