@@ -373,10 +373,11 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
             <MessageCircle className="size-[18px]" />
             <span className="hidden sm:inline">Izoh</span>
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors">
+          <button onClick={sharePost} className="flex-1 flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg hover:bg-surface-2 transition-colors">
             <Share2 className="size-[18px]" />
             <span className="hidden sm:inline">Ulashish</span>
           </button>
+
         </div>
       </div>
 
