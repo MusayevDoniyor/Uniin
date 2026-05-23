@@ -273,7 +273,9 @@ export type Database = {
       }
       marketplace_listings: {
         Row: {
+          cover_image_url: string | null
           created_at: string | null
+          delivery_time: string | null
           description: string | null
           full_content_url: string | null
           id: string
@@ -286,10 +288,14 @@ export type Database = {
           screenshot_protected: boolean | null
           seller_id: string
           status: Database["public"]["Enums"]["listing_status"] | null
+          tags: string[]
           title: string
+          what_included: string | null
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string | null
+          delivery_time?: string | null
           description?: string | null
           full_content_url?: string | null
           id?: string
@@ -302,10 +308,14 @@ export type Database = {
           screenshot_protected?: boolean | null
           seller_id: string
           status?: Database["public"]["Enums"]["listing_status"] | null
+          tags?: string[]
           title: string
+          what_included?: string | null
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string | null
+          delivery_time?: string | null
           description?: string | null
           full_content_url?: string | null
           id?: string
@@ -318,7 +328,9 @@ export type Database = {
           screenshot_protected?: boolean | null
           seller_id?: string
           status?: Database["public"]["Enums"]["listing_status"] | null
+          tags?: string[]
           title?: string
+          what_included?: string | null
         }
         Relationships: [
           {
@@ -515,6 +527,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           certificates: string[] | null
+          certifications: Json
           city: string | null
           created_at: string | null
           dream_universities: string[] | null
@@ -535,6 +548,7 @@ export type Database = {
           school_name: string | null
           target_countries: string[] | null
           target_year: number | null
+          theme_preference: string
           toefl: number | null
           updated_at: string | null
           user_id: string
@@ -544,6 +558,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           certificates?: string[] | null
+          certifications?: Json
           city?: string | null
           created_at?: string | null
           dream_universities?: string[] | null
@@ -564,6 +579,7 @@ export type Database = {
           school_name?: string | null
           target_countries?: string[] | null
           target_year?: number | null
+          theme_preference?: string
           toefl?: number | null
           updated_at?: string | null
           user_id: string
@@ -573,6 +589,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           certificates?: string[] | null
+          certifications?: Json
           city?: string | null
           created_at?: string | null
           dream_universities?: string[] | null
@@ -593,6 +610,7 @@ export type Database = {
           school_name?: string | null
           target_countries?: string[] | null
           target_year?: number | null
+          theme_preference?: string
           toefl?: number | null
           updated_at?: string | null
           user_id?: string
