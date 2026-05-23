@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { formatDistanceToNow } from "date-fns";
 import { countriesToFlags } from "@/lib/country-flags";
-import { ReactionBar } from "./ReactionBar";
+import { ReactionBar, REACTIONS } from "./ReactionBar";
 import { PollBlock } from "./PollBlock";
 
 type PostWithAuthor = {
