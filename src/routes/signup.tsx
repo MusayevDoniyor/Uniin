@@ -5,6 +5,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/PasswordInput";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { Loader2, GraduationCap, BookOpen } from "lucide-react";
 
@@ -46,6 +48,7 @@ function SignupPage() {
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-12"
       style={{ background: "radial-gradient(ellipse at top, oklch(0.30 0.10 265 / 0.4), oklch(0.18 0.03 260) 70%)" }}>
+      <div className="absolute top-4 right-4 z-10"><ThemeToggle /></div>
       <div className="relative w-full max-w-md">
         <div className="flex justify-center mb-8"><Logo size="lg" /></div>
 
@@ -103,7 +106,7 @@ function SignupPage() {
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} className="mt-1.5" placeholder="At least 6 characters" />
+                  <PasswordInput id="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} className="mt-1.5" placeholder="At least 6 characters" />
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
