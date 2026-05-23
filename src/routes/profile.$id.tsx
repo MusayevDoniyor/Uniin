@@ -214,6 +214,94 @@ function ProfilePage() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 mt-4">
+          {isMe && (
+            <Section title={<><Eye className="inline size-3.5 mr-1" /> Profile views (last 90 days)</>}>
+              {profile.is_premium ? (
+                <>
+                  <div className="text-3xl font-bold mb-3">{views.count}</div>
+                  {views.recent.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">No views yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {views.recent.map((v: any, i: number) => (
+                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
+                          <Avatar className="size-9"><AvatarImage src={v.profiles?.avatar_url} /><AvatarFallback>{v.profiles?.full_name?.[0]}</AvatarFallback></Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate flex items-center gap-1.5">{v.profiles?.full_name} <UserBadge type={v.profiles?.user_type} className="!text-[9px]" /></div>
+                            <div className="text-[11px] text-muted-foreground">{new Date(v.created_at).toLocaleString()}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <PremiumLock>
+                  <div className="text-3xl font-bold mb-3">{views.count || 12}</div>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-2">
+                        <div className="size-9 rounded-full bg-surface-2" />
+                        <div className="flex-1"><div className="h-3 w-32 bg-surface-2 rounded" /><div className="h-2 w-20 bg-surface-2 rounded mt-1" /></div>
+                      </div>
+                    ))}
+                  </div>
+                </PremiumLock>
+              )}
+            </Section>
+          )}
+
+          {(badges.length > 0 || profile.is_premium) && (
+            <Section title={<><Award className="inline size-3.5 mr-1" /> Badges</>}>
+              <div className="flex flex-wrap gap-2">
+                {profile.is_premium && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 text-gold border border-gold/30 text-xs font-semibold">
+                    <Crown className="size-3.5" /> Premium
+                  </span>
+                )}
+                {badges.map((b) => (
+                  <span key={b.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/30 text-xs font-semibold capitalize">
+                    <Award className="size-3.5" /> {b.badge_type.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          <Section title={<span className="flex items-center justify-between w-full"><span><ThumbsUp className="inline size-3.5 mr-1" /> Endorsements</span>
+            {!isMe && (
+              <Dialog open={endorseOpen} onOpenChange={setEndorseOpen}>
+                <DialogTrigger asChild>
+                  <button className="text-xs text-primary hover:underline normal-case font-normal tracking-normal"><Plus className="inline size-3" /> Endorse</button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader><DialogTitle>Endorse a skill</DialogTitle></DialogHeader>
+                  <Input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="e.g. Essay writing, Math, Leadership" maxLength={40}
+                    onKeyDown={(e) => { if (e.key === "Enter") addEndorsement(skillInput); }} />
+                  <div className="text-xs text-muted-foreground">Add or remove an endorsement. Click an existing skill to add your vote.</div>
+                  <Button onClick={() => addEndorsement(skillInput)} className="bg-primary hover:bg-accent">Endorse</Button>
+                </DialogContent>
+              </Dialog>
+            )}
+          </span>}>
+            {endorsements.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No endorsements yet. {!isMe && "Be the first to endorse a skill."}</div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {endorsements.map((e) => (
+                  <button
+                    key={e.skill}
+                    disabled={isMe}
+                    onClick={() => addEndorsement(e.skill)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${e.mine ? "bg-primary/20 border-primary text-primary" : "bg-surface-2 border-border hover:border-primary/50"} ${isMe ? "cursor-default" : "cursor-pointer"}`}
+                  >
+                    {e.skill} <span className="text-[10px] font-bold opacity-70">·{e.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Section>
+
           {profile.bio && (
             <Section title="About"><p className="text-sm leading-relaxed">{profile.bio}</p></Section>
           )}
