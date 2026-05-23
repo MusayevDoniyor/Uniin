@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UniversitiesRouteImport } from './routes/universities'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as AiRouteImport } from './routes/ai'
@@ -29,6 +32,11 @@ const UniversitiesRoute = UniversitiesRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsRoute = SessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -46,9 +54,19 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketplaceRoute = MarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedRoute = FeedRouteImport.update({
@@ -82,10 +100,13 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AiRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/groups': typeof GroupsRoute
   '/login': typeof LoginRoute
+  '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/sessions': typeof SessionsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -95,10 +116,13 @@ export interface FileRoutesByTo {
   '/ai': typeof AiRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/groups': typeof GroupsRoute
   '/login': typeof LoginRoute
+  '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/sessions': typeof SessionsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -109,10 +133,13 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/groups': typeof GroupsRoute
   '/login': typeof LoginRoute
+  '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRoute
+  '/sessions': typeof SessionsRoute
   '/signup': typeof SignupRoute
   '/universities': typeof UniversitiesRoute
   '/profile/$id': typeof ProfileIdRoute
@@ -124,10 +151,13 @@ export interface FileRouteTypes {
     | '/ai'
     | '/explore'
     | '/feed'
+    | '/groups'
     | '/login'
+    | '/marketplace'
     | '/messages'
     | '/notifications'
     | '/onboarding'
+    | '/sessions'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -137,10 +167,13 @@ export interface FileRouteTypes {
     | '/ai'
     | '/explore'
     | '/feed'
+    | '/groups'
     | '/login'
+    | '/marketplace'
     | '/messages'
     | '/notifications'
     | '/onboarding'
+    | '/sessions'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -150,10 +183,13 @@ export interface FileRouteTypes {
     | '/ai'
     | '/explore'
     | '/feed'
+    | '/groups'
     | '/login'
+    | '/marketplace'
     | '/messages'
     | '/notifications'
     | '/onboarding'
+    | '/sessions'
     | '/signup'
     | '/universities'
     | '/profile/$id'
@@ -164,10 +200,13 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
+  GroupsRoute: typeof GroupsRoute
   LoginRoute: typeof LoginRoute
+  MarketplaceRoute: typeof MarketplaceRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRoute
+  SessionsRoute: typeof SessionsRoute
   SignupRoute: typeof SignupRoute
   UniversitiesRoute: typeof UniversitiesRoute
   ProfileIdRoute: typeof ProfileIdRoute
@@ -187,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions': {
+      id: '/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -210,11 +256,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/marketplace': {
+      id: '/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feed': {
@@ -260,10 +320,13 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
+  GroupsRoute: GroupsRoute,
   LoginRoute: LoginRoute,
+  MarketplaceRoute: MarketplaceRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRoute,
+  SessionsRoute: SessionsRoute,
   SignupRoute: SignupRoute,
   UniversitiesRoute: UniversitiesRoute,
   ProfileIdRoute: ProfileIdRoute,
