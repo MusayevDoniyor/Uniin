@@ -109,6 +109,28 @@ function ProfilePage() {
     }
     window.location.href = `/messages?c=${convId}`;
   };
+  const addEndorsement = async (skillRaw: string) => {
+    if (!user || !profile || isMe) return;
+    const skill = skillRaw.trim().slice(0, 40);
+    if (!skill) return;
+    const existing = endorsements.find((e) => e.skill === skill && e.mine);
+    if (existing) {
+      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", id).eq("skill", skill);
+      setEndorsements((prev) => prev.map((e) => e.skill === skill ? { ...e, count: Math.max(0, e.count - 1), mine: false } : e).filter((e) => e.count > 0));
+    } else {
+      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: id, skill });
+      if (error) return toast.error(error.message);
+      setEndorsements((prev) => {
+        const idx = prev.findIndex((e) => e.skill === skill);
+        if (idx >= 0) return prev.map((e) => e.skill === skill ? { ...e, count: e.count + 1, mine: true } : e);
+        return [...prev, { skill, count: 1, mine: true }];
+      });
+      toast.success(`Endorsed for ${skill}`);
+    }
+    setSkillInput("");
+    setEndorseOpen(false);
+  };
+
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin text-primary" /></div>;
   if (!profile) return <div className="text-center py-20">Profile not found</div>;
