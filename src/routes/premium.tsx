@@ -28,7 +28,7 @@ const PRO = [
 ];
 
 function Premium() {
-  const { user, profile, refresh } = useAuth() as any;
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
