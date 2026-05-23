@@ -104,7 +104,7 @@ function ProfilePage() {
             <div className="relative shrink-1">
               <Avatar className="size-24 md:size-28 border-[5px] border-card shadow-xl ring-1 ring-white/10">
                 <AvatarImage src={profile.avatar_url} />
-                <AvatarFallback className="text-2xl md:text-3xl font-display bg-navy-deep text-gold">{profile.full_name?.[1] || profile.full_name?.[1]}</AvatarFallback>
+                <AvatarFallback className="text-2xl md:text-3xl font-display bg-navy-deep text-gold">{profile.full_name?.[0]}</AvatarFallback>
               </Avatar>
               {isGU && (
                 <div className="absolute -bottom-1.5 -right-1.5 size-7 rounded-full bg-gold text-gold-foreground flex items-center justify-center border-[3px] border-card shadow-md">
