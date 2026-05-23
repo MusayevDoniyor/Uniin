@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { PremiumGate } from "@/components/PremiumGate";
 
 export const Route = createFileRoute("/ai")({
   component: () => <RequireAuth><AIAdvisor /></RequireAuth>,
@@ -125,23 +126,29 @@ function AIAdvisor() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {!result && !loading && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Start with a prompt:</p>
-              {STARTERS.map(p => {
-                const Icon = p.icon;
-                return (
-                  <button key={p.title} onClick={() => { setMode(p.m); setInput(p.text); send(p.m, p.text); }}
-                    className="w-full text-left surface-card p-4 hover:border-primary/40 transition-colors flex items-start gap-3">
-                    <Icon className="size-5 text-primary mt-0.5 shrink-0" />
-                    <div className="font-medium">{p.title}</div>
-                  </button>
-                );
-              })}
-            </div>
+          {mode === "essay_coach" && !profile?.is_premium ? (
+            <PremiumGate feature="Essay Coach AI" />
+          ) : (
+            <>
+              {!result && !loading && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Start with a prompt:</p>
+                  {STARTERS.map(p => {
+                    const Icon = p.icon;
+                    return (
+                      <button key={p.title} onClick={() => { setMode(p.m); setInput(p.text); send(p.m, p.text); }}
+                        className="w-full text-left surface-card p-4 hover:border-primary/40 transition-colors flex items-start gap-3">
+                        <Icon className="size-5 text-primary mt-0.5 shrink-0" />
+                        <div className="font-medium">{p.title}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Thinking…</div>}
+              {summary && <div className="surface-card p-4 text-sm leading-relaxed">{summary}</div>}
+            </>
           )}
-          {loading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Thinking…</div>}
-          {summary && <div className="surface-card p-4 text-sm leading-relaxed">{summary}</div>}
         </div>
 
         <div className="p-3 border-t border-border flex gap-2">

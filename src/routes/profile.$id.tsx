@@ -7,9 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "@/components/UserBadge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { GraduationCap, MapPin, MessageSquare, Video, UserPlus, UserCheck, FileText, Loader2 } from "lucide-react";
+import { GraduationCap, MapPin, MessageSquare, Video, UserPlus, UserCheck, FileText, Loader2, Eye, Award, ThumbsUp, Crown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
+import { PremiumLock } from "@/components/PremiumGate";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/profile/$id")({
   component: () => <RequireAuth><ProfilePage /></RequireAuth>,
@@ -23,6 +26,11 @@ function ProfilePage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [views, setViews] = useState<{ count: number; recent: any[] }>({ count: 0, recent: [] });
+  const [endorsements, setEndorsements] = useState<{ skill: string; count: number; mine: boolean }[]>([]);
+  const [badges, setBadges] = useState<any[]>([]);
+  const [endorseOpen, setEndorseOpen] = useState(false);
+  const [skillInput, setSkillInput] = useState("");
 
   const isMe = myProfile?.id === id;
 
@@ -44,7 +52,36 @@ function ProfilePage() {
       if (user && p) {
         const { data: f } = await supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", id).maybeSingle();
         setFollowing(!!f);
+        // Record profile view (don't self-view)
+        if (user.id !== p.user_id) {
+          await supabase.from("profile_views").insert({ viewer_id: user.id, viewed_id: id });
+        }
       }
+
+      // Endorsements
+      const { data: endo } = await supabase.from("skill_endorsements").select("skill, endorser_id").eq("endorsed_id", id);
+      const grouped: Record<string, { count: number; mine: boolean }> = {};
+      (endo || []).forEach((e: any) => {
+        if (!grouped[e.skill]) grouped[e.skill] = { count: 0, mine: false };
+        grouped[e.skill].count++;
+        if (user && e.endorser_id === user.id) grouped[e.skill].mine = true;
+      });
+      setEndorsements(Object.entries(grouped).map(([skill, v]) => ({ skill, ...v })).sort((a, b) => b.count - a.count));
+
+      // Badges
+      const { data: bd } = await supabase.from("badges").select("*").eq("user_id", p?.user_id || "").order("earned_at", { ascending: false });
+      setBadges(bd || []);
+
+      // Views (self only)
+      if (user && p && user.id === p.user_id) {
+        const since = new Date(); since.setDate(since.getDate() - 90);
+        const { data: vw, count } = await supabase.from("profile_views")
+          .select("viewer_id, created_at, profiles!profile_views_viewer_id_fkey(id, full_name, avatar_url, user_type)", { count: "exact" })
+          .eq("viewed_id", id).gte("created_at", since.toISOString())
+          .order("created_at", { ascending: false }).limit(10);
+        setViews({ count: count || 0, recent: vw || [] });
+      }
+
       setLoading(false);
     };
     load();
@@ -72,6 +109,28 @@ function ProfilePage() {
     }
     window.location.href = `/messages?c=${convId}`;
   };
+  const addEndorsement = async (skillRaw: string) => {
+    if (!user || !profile || isMe) return;
+    const skill = skillRaw.trim().slice(0, 40);
+    if (!skill) return;
+    const existing = endorsements.find((e) => e.skill === skill && e.mine);
+    if (existing) {
+      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", id).eq("skill", skill);
+      setEndorsements((prev) => prev.map((e) => e.skill === skill ? { ...e, count: Math.max(0, e.count - 1), mine: false } : e).filter((e) => e.count > 0));
+    } else {
+      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: id, skill });
+      if (error) return toast.error(error.message);
+      setEndorsements((prev) => {
+        const idx = prev.findIndex((e) => e.skill === skill);
+        if (idx >= 0) return prev.map((e) => e.skill === skill ? { ...e, count: e.count + 1, mine: true } : e);
+        return [...prev, { skill, count: 1, mine: true }];
+      });
+      toast.success(`Endorsed for ${skill}`);
+    }
+    setSkillInput("");
+    setEndorseOpen(false);
+  };
+
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin text-primary" /></div>;
   if (!profile) return <div className="text-center py-20">Profile not found</div>;
@@ -155,6 +214,94 @@ function ProfilePage() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 mt-4">
+          {isMe && (
+            <Section title={<><Eye className="inline size-3.5 mr-1" /> Profile views (last 90 days)</>}>
+              {profile.is_premium ? (
+                <>
+                  <div className="text-3xl font-bold mb-3">{views.count}</div>
+                  {views.recent.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">No views yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {views.recent.map((v: any, i: number) => (
+                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
+                          <Avatar className="size-9"><AvatarImage src={v.profiles?.avatar_url} /><AvatarFallback>{v.profiles?.full_name?.[0]}</AvatarFallback></Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate flex items-center gap-1.5">{v.profiles?.full_name} <UserBadge type={v.profiles?.user_type} className="!text-[9px]" /></div>
+                            <div className="text-[11px] text-muted-foreground">{new Date(v.created_at).toLocaleString()}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <PremiumLock>
+                  <div className="text-3xl font-bold mb-3">{views.count || 12}</div>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-2">
+                        <div className="size-9 rounded-full bg-surface-2" />
+                        <div className="flex-1"><div className="h-3 w-32 bg-surface-2 rounded" /><div className="h-2 w-20 bg-surface-2 rounded mt-1" /></div>
+                      </div>
+                    ))}
+                  </div>
+                </PremiumLock>
+              )}
+            </Section>
+          )}
+
+          {(badges.length > 0 || profile.is_premium) && (
+            <Section title={<><Award className="inline size-3.5 mr-1" /> Badges</>}>
+              <div className="flex flex-wrap gap-2">
+                {profile.is_premium && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 text-gold border border-gold/30 text-xs font-semibold">
+                    <Crown className="size-3.5" /> Premium
+                  </span>
+                )}
+                {badges.map((b) => (
+                  <span key={b.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/30 text-xs font-semibold capitalize">
+                    <Award className="size-3.5" /> {b.badge_type.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          <Section title={<span className="flex items-center justify-between w-full"><span><ThumbsUp className="inline size-3.5 mr-1" /> Endorsements</span>
+            {!isMe && (
+              <Dialog open={endorseOpen} onOpenChange={setEndorseOpen}>
+                <DialogTrigger asChild>
+                  <button className="text-xs text-primary hover:underline normal-case font-normal tracking-normal"><Plus className="inline size-3" /> Endorse</button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader><DialogTitle>Endorse a skill</DialogTitle></DialogHeader>
+                  <Input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="e.g. Essay writing, Math, Leadership" maxLength={40}
+                    onKeyDown={(e) => { if (e.key === "Enter") addEndorsement(skillInput); }} />
+                  <div className="text-xs text-muted-foreground">Add or remove an endorsement. Click an existing skill to add your vote.</div>
+                  <Button onClick={() => addEndorsement(skillInput)} className="bg-primary hover:bg-accent">Endorse</Button>
+                </DialogContent>
+              </Dialog>
+            )}
+          </span>}>
+            {endorsements.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No endorsements yet. {!isMe && "Be the first to endorse a skill."}</div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {endorsements.map((e) => (
+                  <button
+                    key={e.skill}
+                    disabled={isMe}
+                    onClick={() => addEndorsement(e.skill)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${e.mine ? "bg-primary/20 border-primary text-primary" : "bg-surface-2 border-border hover:border-primary/50"} ${isMe ? "cursor-default" : "cursor-pointer"}`}
+                  >
+                    {e.skill} <span className="text-[10px] font-bold opacity-70">·{e.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Section>
+
           {profile.bio && (
             <Section title="About"><p className="text-sm leading-relaxed">{profile.bio}</p></Section>
           )}
