@@ -26,6 +26,11 @@ function ProfilePage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [views, setViews] = useState<{ count: number; recent: any[] }>({ count: 0, recent: [] });
+  const [endorsements, setEndorsements] = useState<{ skill: string; count: number; mine: boolean }[]>([]);
+  const [badges, setBadges] = useState<any[]>([]);
+  const [endorseOpen, setEndorseOpen] = useState(false);
+  const [skillInput, setSkillInput] = useState("");
 
   const isMe = myProfile?.id === id;
 
