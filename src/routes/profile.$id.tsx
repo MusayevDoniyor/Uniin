@@ -7,9 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "@/components/UserBadge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { GraduationCap, MapPin, MessageSquare, Video, UserPlus, UserCheck, FileText, Loader2 } from "lucide-react";
+import { GraduationCap, MapPin, MessageSquare, Video, UserPlus, UserCheck, FileText, Loader2, Eye, Award, ThumbsUp, Crown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
+import { PremiumLock } from "@/components/PremiumGate";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/profile/$id")({
   component: () => <RequireAuth><ProfilePage /></RequireAuth>,
