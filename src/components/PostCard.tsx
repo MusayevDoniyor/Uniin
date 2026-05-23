@@ -188,10 +188,20 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
+      {/* Title (for poll/article) */}
+      {post.title && <h2 className="mt-3 text-lg font-display font-semibold">{post.title}</h2>}
+
       {/* Body */}
-      <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
-        {post.content}
-      </div>
+      {post.content && (
+        <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed break-words">
+          {post.content}
+        </div>
+      )}
+
+      {/* Poll */}
+      {post.post_type === "poll" && Array.isArray(post.poll_options) && post.poll_options.length > 0 && (
+        <PollBlock postId={post.id} options={post.poll_options as string[]} />
+      )}
 
       {post.media_urls?.length > 0 && (
         <div className={`mt-3 grid gap-2 rounded-lg overflow-hidden ${post.media_urls.length > 1 ? "grid-cols-2" : ""}`}>
@@ -201,34 +211,18 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
       )}
 
-      {/* Counts strip */}
-      {(likes > 0 || commentCount > 0) && (
-        <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-          {likes > 0 ? (
-            <span className="inline-flex items-center gap-1">
-              <span className="inline-flex items-center justify-center size-4 rounded-full bg-primary/15 text-primary">
-                <Heart size={9} className="fill-primary" />
-              </span>
-              {likes}
-            </span>
-          ) : <span />}
-          {commentCount > 0 && (
-            <button onClick={loadComments} className="hover:underline">
-              {commentCount} ta izoh
-            </button>
-          )}
+      {/* Counts strip (only comments now; reactions show their own counts) */}
+      {commentCount > 0 && (
+        <div className="flex items-center justify-end mt-3 text-xs text-muted-foreground">
+          <button onClick={loadComments} className="hover:underline">
+            {commentCount} ta izoh
+          </button>
         </div>
       )}
 
       {/* Action bar */}
-      <div className="grid grid-cols-3 mt-2 pt-2 border-t border-border text-sm text-muted-foreground">
-        <button
-          onClick={toggleLike}
-          className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors ${liked ? "text-primary font-semibold" : ""}`}
-        >
-          <Heart className={`size-4 ${liked ? "fill-primary" : ""}`} />
-          <span>Like</span>
-        </button>
+      <div className="grid grid-cols-3 mt-2 pt-2 border-t border-border text-sm text-muted-foreground gap-1">
+        <ReactionBar postId={post.id} />
         <button
           onClick={loadComments}
           className={`flex items-center justify-center gap-1.5 py-2 rounded-lg hover:bg-surface-2 transition-colors ${showComments ? "text-foreground font-semibold" : ""}`}
