@@ -21,6 +21,7 @@ const NAV = [
   { to: "/universities", label: "Universities", icon: GraduationCap },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/wallet", label: "Wallet", icon: Wallet },
+  { to: "/premium", label: "Premium", icon: Crown },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
