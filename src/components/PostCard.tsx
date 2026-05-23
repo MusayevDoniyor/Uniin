@@ -257,9 +257,33 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
             <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
           </div>
         </div>
-        <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-surface-2" aria-label="More">
-          <MoreHorizontal size={18} />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-surface-2" aria-label="More">
+              <MoreHorizontal size={18} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={copyLink}>
+              <Link2 size={14} className="mr-2" /> Havoladan nusxa olish
+            </DropdownMenuItem>
+            {isOwner && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setEditValue(content); setEditOpen(true); }}>
+                  <Pencil size={14} className="mr-2" /> Tahrirlash
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 size={14} className="mr-2" /> O'chirish
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </div>
 
       {/* Meta chip row — post type, major, target countries, score */}
