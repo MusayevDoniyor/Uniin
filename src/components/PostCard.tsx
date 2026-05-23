@@ -63,6 +63,22 @@ export function PostCard({ post }: { post: PostWithAuthor }) {
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Reaction counts summary
+  const [reactCounts, setReactCounts] = useState<Record<string, number>>({});
+  const reactTotal = Object.values(reactCounts).reduce((a, b) => a + b, 0);
+  const topReacts = Object.entries(reactCounts)
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(1, 3);
+
+  useEffect(() => {
+    supabase.from("post_reactions").select("reaction").eq("post_id", post.id).then(({ data }) => {
+      const next: Record<string, number> = {};
+      (data || []).forEach((r: any) => { next[r.reaction] = (next[r.reaction] || 0) + 1; });
+      setReactCounts(next);
+    });
+  }, [post.id]);
+
   const toggleCommentLike = (id: string) =>
     setLikedComments((s) => ({ ...s, [id]: !s[id] }));
 
