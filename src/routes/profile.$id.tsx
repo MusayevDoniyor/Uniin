@@ -52,7 +52,36 @@ function ProfilePage() {
       if (user && p) {
         const { data: f } = await supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", id).maybeSingle();
         setFollowing(!!f);
+        // Record profile view (don't self-view)
+        if (user.id !== p.user_id) {
+          await supabase.from("profile_views").insert({ viewer_id: user.id, viewed_id: id });
+        }
       }
+
+      // Endorsements
+      const { data: endo } = await supabase.from("skill_endorsements").select("skill, endorser_id").eq("endorsed_id", id);
+      const grouped: Record<string, { count: number; mine: boolean }> = {};
+      (endo || []).forEach((e: any) => {
+        if (!grouped[e.skill]) grouped[e.skill] = { count: 0, mine: false };
+        grouped[e.skill].count++;
+        if (user && e.endorser_id === user.id) grouped[e.skill].mine = true;
+      });
+      setEndorsements(Object.entries(grouped).map(([skill, v]) => ({ skill, ...v })).sort((a, b) => b.count - a.count));
+
+      // Badges
+      const { data: bd } = await supabase.from("badges").select("*").eq("user_id", p?.user_id || "").order("earned_at", { ascending: false });
+      setBadges(bd || []);
+
+      // Views (self only)
+      if (user && p && user.id === p.user_id) {
+        const since = new Date(); since.setDate(since.getDate() - 90);
+        const { data: vw, count } = await supabase.from("profile_views")
+          .select("viewer_id, created_at, profiles!profile_views_viewer_id_fkey(id, full_name, avatar_url, user_type)", { count: "exact" })
+          .eq("viewed_id", id).gte("created_at", since.toISOString())
+          .order("created_at", { ascending: false }).limit(10);
+        setViews({ count: count || 0, recent: vw || [] });
+      }
+
       setLoading(false);
     };
     load();
