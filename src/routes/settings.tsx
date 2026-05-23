@@ -1,14 +1,12 @@
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/lib/theme";
@@ -16,9 +14,13 @@ import { PhoneInput, isValidUzPhone } from "@/components/PhoneInput";
 import { ScoreInput } from "@/components/ScoreInput";
 import { WordCountTextarea } from "@/components/WordCountTextarea";
 import { CertificateEditor, type Certification } from "@/components/CertificateEditor";
+import { AvatarPicker } from "@/components/AvatarPicker";
 import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
-import { Loader2, Sun, Moon, Upload, User, GraduationCap, Award, Settings as SettingsIcon } from "lucide-react";
+import {
+  Loader2, Sun, Moon, Monitor, Upload, User, GraduationCap, Award,
+  Settings as SettingsIcon, ImageIcon, Trash2, Pencil,
+} from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: () => <RequireAuth><Settings /></RequireAuth>,
@@ -27,8 +29,9 @@ export const Route = createFileRoute("/settings")({
 function Settings() {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
-  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [f, setF] = useState<any>(null);
 
   useEffect(() => {
@@ -36,6 +39,7 @@ function Settings() {
       setF({
         full_name: profile.full_name || "",
         avatar_url: profile.avatar_url || "",
+        cover_image_url: (profile as any).cover_image_url || "",
         city: profile.city || "",
         phone: profile.phone || "",
         school_name: profile.school_name || "",
@@ -60,20 +64,50 @@ function Settings() {
 
   const update = (patch: any) => setF((p: any) => ({ ...p, ...patch }));
 
+  const uploadFile = async (bucket: "avatars" | "covers", file: File) => {
+    const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true, cacheControl: "3600" });
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  };
+
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
-    const path = `${user.id}/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) return toast.error(error.message);
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    update({ avatar_url: publicUrl });
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadFile("avatars", file);
+      update({ avatar_url: url });
+      toast.success("Photo updated — don't forget to save");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
+
+  const uploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setUploadingCover(true);
+    try {
+      const url = await uploadFile("covers", file);
+      update({ cover_image_url: url });
+      toast.success("Cover updated — don't forget to save");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploadingCover(false);
+      e.target.value = "";
+    }
   };
 
   const save = async () => {
     if (f.phone && !isValidUzPhone(f.phone)) return toast.error("Invalid phone");
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
-      full_name: f.full_name, avatar_url: f.avatar_url || null,
+      full_name: f.full_name,
+      avatar_url: f.avatar_url || null,
+      cover_image_url: f.cover_image_url || null,
       city: f.city, phone: f.phone, school_name: f.school_name, bio: f.bio,
       gpa: f.gpa_na || !f.gpa ? null : parseFloat(f.gpa),
       gpa_scale: f.gpa_scale,
@@ -83,7 +117,7 @@ function Settings() {
       intended_major: f.intended_major || null,
       certifications: f.certifications as any,
       theme_preference: theme,
-    }).eq("user_id", user.id);
+    } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     await refreshProfile();
@@ -108,14 +142,52 @@ function Settings() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4 mt-4">
-          <Section title="Photo">
-            <div className="flex items-center gap-4">
-              <Avatar className="size-20"><AvatarImage src={f.avatar_url} /><AvatarFallback>{f.full_name?.[0]}</AvatarFallback></Avatar>
-              <Label className="cursor-pointer">
-                <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-sm hover:bg-surface"><Upload className="size-4 mr-1.5" />Change photo</span>
-                <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
-              </Label>
+          <Section title="Cover photo">
+            <div className="relative h-40 rounded-lg overflow-hidden border border-border bg-surface-2"
+              style={f.cover_image_url ? { backgroundImage: `url(${f.cover_image_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : { background: "linear-gradient(135deg, oklch(0.22 0.06 265), oklch(0.40 0.15 27))" }}>
+              <div className="absolute bottom-3 right-3 flex gap-2">
+                <Label className="cursor-pointer">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-md bg-background/80 backdrop-blur text-xs font-medium hover:bg-background">
+                    {uploadingCover ? <Loader2 className="size-3.5 mr-1.5 animate-spin" /> : <Pencil className="size-3.5 mr-1.5" />}
+                    {f.cover_image_url ? "Change" : "Upload cover"}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={uploadCover} />
+                </Label>
+                {f.cover_image_url && (
+                  <button type="button" onClick={() => update({ cover_image_url: "" })}
+                    className="inline-flex items-center px-3 py-1.5 rounded-md bg-background/80 backdrop-blur text-xs font-medium hover:bg-destructive/20 text-destructive">
+                    <Trash2 className="size-3.5 mr-1.5" /> Delete
+                  </button>
+                )}
+              </div>
             </div>
+          </Section>
+
+          <Section title="Profile photo">
+            <div className="flex flex-wrap items-center gap-4">
+              <Avatar className="size-24 border-2 border-border">
+                <AvatarImage src={f.avatar_url || undefined} />
+                <AvatarFallback className="text-xl">{f.full_name?.[0] || "U"}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-wrap gap-2">
+                <Label className="cursor-pointer">
+                  <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-sm hover:bg-surface">
+                    {uploadingAvatar ? <Loader2 className="size-4 mr-1.5 animate-spin" /> : <Upload className="size-4 mr-1.5" />}
+                    {f.avatar_url ? "Change photo" : "Upload photo"}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} />
+                </Label>
+                <AvatarPicker onPick={(url) => { update({ avatar_url: url }); toast.success("Avatar selected"); }} />
+                {f.avatar_url && (
+                  <Button type="button" variant="outline" size="sm" onClick={() => update({ avatar_url: "" })}
+                    className="text-destructive border-destructive/40 hover:bg-destructive/10">
+                    <Trash2 className="size-4 mr-1.5" /> Delete
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">JPG or PNG, up to ~5MB. Or pick one from our default collection.</p>
           </Section>
 
           <Section title="Basic info">
@@ -123,9 +195,9 @@ function Settings() {
               <div><Label>Full name</Label><Input maxLength={80} value={f.full_name} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" /></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label>City</Label>
+                  <Label>Region</Label>
                   <Select value={f.city} onValueChange={v => update({ city: v })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick" /></SelectTrigger>
+                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pick a region" /></SelectTrigger>
                     <SelectContent className="max-h-72">{UZ_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
@@ -139,49 +211,57 @@ function Settings() {
 
         <TabsContent value="academic" className="space-y-4 mt-4">
           <Section title="Test scores">
-            <p className="text-xs text-muted-foreground mb-3">Toggle "Don't have" for anything you haven't taken yet — you can add it later.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex gap-2 items-end">
+            <p className="text-xs text-muted-foreground mb-4">Toggle "Don't have" for anything you haven't taken yet — you can always add it later.</p>
+
+            {/* GPA — full row */}
+            <div className="surface-card bg-surface-2/40 p-4 mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3">
                 <div className="flex-1">
                   <ScoreInput label="GPA" value={f.gpa} onChange={v => update({ gpa: v })}
                     min={0} max={f.gpa_scale} step={0.01} placeholder={`max ${f.gpa_scale}`}
                     notTaken={f.gpa_na} onToggleNotTaken={v => update({ gpa_na: v })} suffix={`/${f.gpa_scale}`} />
                 </div>
-                <Select value={String(f.gpa_scale)} onValueChange={v => update({ gpa_scale: parseFloat(v) })}>
-                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="4">/4.0</SelectItem><SelectItem value="5">/5.0</SelectItem></SelectContent>
-                </Select>
+                <div className="sm:w-32">
+                  <Label className="text-xs">Scale</Label>
+                  <Select value={String(f.gpa_scale)} onValueChange={v => update({ gpa_scale: parseFloat(v) })}>
+                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="4">/4.0</SelectItem><SelectItem value="5">/5.0</SelectItem></SelectContent>
+                  </Select>
+                </div>
               </div>
-              <ScoreInput label="SAT" value={f.sat} onChange={v => update({ sat: v })}
-                min={400} max={1600} placeholder="1500" notTaken={f.sat_na} onToggleNotTaken={v => update({ sat_na: v })} />
-              <ScoreInput label="IELTS" value={f.ielts} onChange={v => update({ ielts: v })}
-                min={0} max={9} step={0.5} placeholder="7.5" suffix="/9" notTaken={f.ielts_na} onToggleNotTaken={v => update({ ielts_na: v })} />
-              <ScoreInput label="TOEFL" value={f.toefl} onChange={v => update({ toefl: v })}
-                min={0} max={120} placeholder="105" suffix="/120" notTaken={f.toefl_na} onToggleNotTaken={v => update({ toefl_na: v })} />
+            </div>
+
+            {/* SAT, IELTS, TOEFL — one per row on mobile, 3 per row on desktop with spacing */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="surface-card bg-surface-2/40 p-4">
+                <ScoreInput label="SAT" value={f.sat} onChange={v => update({ sat: v })}
+                  min={400} max={1600} placeholder="1500" notTaken={f.sat_na} onToggleNotTaken={v => update({ sat_na: v })} suffix="/1600" />
+              </div>
+              <div className="surface-card bg-surface-2/40 p-4">
+                <ScoreInput label="IELTS" value={f.ielts} onChange={v => update({ ielts: v })}
+                  min={0} max={9} step={0.5} placeholder="7.5" suffix="/9" notTaken={f.ielts_na} onToggleNotTaken={v => update({ ielts_na: v })} />
+              </div>
+              <div className="surface-card bg-surface-2/40 p-4">
+                <ScoreInput label="TOEFL" value={f.toefl} onChange={v => update({ toefl: v })}
+                  min={0} max={120} placeholder="105" suffix="/120" notTaken={f.toefl_na} onToggleNotTaken={v => update({ toefl_na: v })} />
+              </div>
             </div>
           </Section>
         </TabsContent>
 
         <TabsContent value="certs" className="space-y-4 mt-4">
           <Section title="Certifications">
-            <p className="text-xs text-muted-foreground mb-3">LinkedIn-style. Add credentials with name, issuer, and date.</p>
+            <p className="text-xs text-muted-foreground mb-3">LinkedIn-style. Add credentials with name, issuer, date, link, and (optional) certificate image.</p>
             <CertificateEditor value={f.certifications} onChange={v => update({ certifications: v })} />
           </Section>
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-4 mt-4">
           <Section title="Theme">
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setTheme("light")} className={`p-4 rounded-lg border-2 text-left transition-all ${theme === "light" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
-                <Sun className="size-5 text-gold mb-2" />
-                <div className="font-semibold">Light</div>
-                <div className="text-xs text-muted-foreground">Crisp & bright</div>
-              </button>
-              <button onClick={() => setTheme("dark")} className={`p-4 rounded-lg border-2 text-left transition-all ${theme === "dark" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
-                <Moon className="size-5 text-info mb-2" />
-                <div className="font-semibold">Dark</div>
-                <div className="text-xs text-muted-foreground">Default, easy on eyes</div>
-              </button>
+            <div className="grid grid-cols-3 gap-3">
+              <ThemeCard active={theme === "light"} onClick={() => setTheme("light")} icon={<Sun className="size-5 text-gold" />} label="Light" sub="Crisp & bright" />
+              <ThemeCard active={theme === "dark"} onClick={() => setTheme("dark")} icon={<Moon className="size-5 text-info" />} label="Dark" sub="Easy on eyes" />
+              <ThemeCard active={theme === "system"} onClick={() => setTheme("system")} icon={<Monitor className="size-5 text-primary" />} label="System" sub="Match OS" />
             </div>
           </Section>
         </TabsContent>
@@ -202,5 +282,16 @@ function Section({ title, children }: any) {
       <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground mb-3">{title}</h3>
       {children}
     </div>
+  );
+}
+
+function ThemeCard({ active, onClick, icon, label, sub }: any) {
+  return (
+    <button onClick={onClick} type="button"
+      className={`p-4 rounded-lg border-2 text-left transition-all ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+      <div className="mb-2">{icon}</div>
+      <div className="font-semibold">{label}</div>
+      <div className="text-xs text-muted-foreground">{sub}</div>
+    </button>
   );
 }
