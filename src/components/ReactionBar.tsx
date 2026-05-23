@@ -61,19 +61,6 @@ export function ReactionBar({ postId }: { postId: string }) {
 
   return (
     <div className="relative">
-      {/* Counts strip */}
-      {total > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-          <div className="flex -space-x-1">
-            {top.map(([t]) => {
-              const meta = REACTIONS.find((x) => x.type === t)!;
-              return <span key={t} className="size-5 rounded-full bg-surface-2 border border-border flex items-center justify-center text-[11px]">{meta.emoji}</span>;
-            })}
-          </div>
-          <span>{total}</span>
-        </div>
-      )}
-
       <button
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
