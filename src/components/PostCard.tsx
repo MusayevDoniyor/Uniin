@@ -220,8 +220,11 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
   const targetFlags = !isGU ? countriesToFlags(post.profiles.target_countries) : "";
   const postTypeMeta = POST_TYPE_LABEL[post.post_type] || POST_TYPE_LABEL.update;
 
+  if (deleted) return null;
+
   return (
-    <article className={`surface-card p-5 transition-colors ${isGU ? "gu-accent-border" : ""}`}>
+    <article id={`post-${post.id}`} className={`surface-card p-5 transition-colors ${isGU ? "gu-accent-border" : ""}`}>
+
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link to="/profile/$id" params={{ id: post.profiles.id }} className="shrink-0">
