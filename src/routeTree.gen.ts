@@ -20,12 +20,12 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as GroupsRouteImport } from './routes/groups'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GroupsIndexRouteImport } from './routes/groups.index'
 import { Route as ProfileIdRouteImport } from './routes/profile.$id'
 import { Route as GroupsSlugRouteImport } from './routes/groups.$slug'
 
@@ -84,11 +84,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GroupsRoute = GroupsRouteImport.update({
-  id: '/groups',
-  path: '/groups',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FeedRoute = FeedRouteImport.update({
   id: '/feed',
   path: '/feed',
@@ -114,6 +109,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupsIndexRoute = GroupsIndexRouteImport.update({
+  id: '/groups/',
+  path: '/groups/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileIdRoute = ProfileIdRouteImport.update({
   id: '/profile/$id',
   path: '/profile/$id',
@@ -131,7 +131,6 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/groups': typeof GroupsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
@@ -145,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof WalletRoute
   '/groups/$slug': typeof GroupsSlugRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -152,7 +152,6 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/groups': typeof GroupsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
@@ -166,6 +165,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof WalletRoute
   '/groups/$slug': typeof GroupsSlugRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/groups': typeof GroupsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -174,7 +174,6 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
-  '/groups': typeof GroupsRouteWithChildren
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
@@ -188,6 +187,7 @@ export interface FileRoutesById {
   '/wallet': typeof WalletRoute
   '/groups/$slug': typeof GroupsSlugRoute
   '/profile/$id': typeof ProfileIdRoute
+  '/groups/': typeof GroupsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,7 +197,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/feed'
-    | '/groups'
     | '/login'
     | '/marketplace'
     | '/messages'
@@ -211,6 +210,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/groups/$slug'
     | '/profile/$id'
+    | '/groups/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -218,7 +218,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/feed'
-    | '/groups'
     | '/login'
     | '/marketplace'
     | '/messages'
@@ -232,6 +231,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/groups/$slug'
     | '/profile/$id'
+    | '/groups'
   id:
     | '__root__'
     | '/'
@@ -239,7 +239,6 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/feed'
-    | '/groups'
     | '/login'
     | '/marketplace'
     | '/messages'
@@ -253,6 +252,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/groups/$slug'
     | '/profile/$id'
+    | '/groups/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,7 +261,6 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
-  GroupsRoute: typeof GroupsRouteWithChildren
   LoginRoute: typeof LoginRoute
   MarketplaceRoute: typeof MarketplaceRoute
   MessagesRoute: typeof MessagesRoute
@@ -274,6 +273,7 @@ export interface RootRouteChildren {
   UniversitiesRoute: typeof UniversitiesRoute
   WalletRoute: typeof WalletRoute
   ProfileIdRoute: typeof ProfileIdRoute
+  GroupsIndexRoute: typeof GroupsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -355,13 +355,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/groups': {
-      id: '/groups'
-      path: '/groups'
-      fullPath: '/groups'
-      preLoaderRoute: typeof GroupsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/feed': {
       id: '/feed'
       path: '/feed'
@@ -397,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groups/': {
+      id: '/groups/'
+      path: '/groups'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof GroupsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/$id': {
       id: '/profile/$id'
       path: '/profile/$id'
@@ -414,24 +414,12 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface GroupsRouteChildren {
-  GroupsSlugRoute: typeof GroupsSlugRoute
-}
-
-const GroupsRouteChildren: GroupsRouteChildren = {
-  GroupsSlugRoute: GroupsSlugRoute,
-}
-
-const GroupsRouteWithChildren =
-  GroupsRoute._addFileChildren(GroupsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiRoute: AiRoute,
   EventsRoute: EventsRoute,
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
-  GroupsRoute: GroupsRouteWithChildren,
   LoginRoute: LoginRoute,
   MarketplaceRoute: MarketplaceRoute,
   MessagesRoute: MessagesRoute,
@@ -444,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   UniversitiesRoute: UniversitiesRoute,
   WalletRoute: WalletRoute,
   ProfileIdRoute: ProfileIdRoute,
+  GroupsIndexRoute: GroupsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
