@@ -203,6 +203,16 @@ function Settings() {
           <Section title="Basic info">
             <div className="space-y-3">
               <div><Label>Full name</Label><Input maxLength={80} value={f.full_name} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" /></div>
+              <div>
+                <Label>Username <span className="text-xs text-muted-foreground font-normal">(profil havolasi: /profile/@{f.username || "—"})</span></Label>
+                <Input
+                  maxLength={30}
+                  value={f.username}
+                  onChange={e => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                  placeholder="masalan: doniyor-musayev"
+                  className="mt-1.5 font-mono"
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Region</Label>
