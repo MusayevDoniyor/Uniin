@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.apply_manual_wallet_topup() FROM PUBLIC, anon, authenticated;
