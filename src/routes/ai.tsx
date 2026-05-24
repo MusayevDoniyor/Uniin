@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
-import { callAI } from "@/lib/ai.functions";
 import {
   Sparkles,
   Target,
@@ -33,7 +31,6 @@ type Mode = "university_match" | "profile_analyzer" | "essay_coach";
 
 function AIAdvisor() {
   const { profile } = useAuth();
-  const ai = useServerFn(callAI);
   const [mode, setMode] = useState<Mode>("university_match");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -166,26 +163,45 @@ function AIAdvisor() {
 - Bio: ${profile.bio}`;
 
     try {
-      const data = await ai({
-        data: {
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: systemPrompts[m] + "\n\n" + profileContext },
-            { role: "user", content: userMsg },
-          ],
-          tools: [{ type: "function", function: tools[m] }],
-          tool_choice: { type: "function", function: { name: tools[m].name } },
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_LOVABLE_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.",
+        );
+      }
+
+      const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gemini-2.5-flash",
+            messages: [
+              { role: "system", content: systemPrompts[m] + "\n\n" + profileContext },
+              { role: "user", content: userMsg },
+            ],
+            tools: [{ type: "function", function: tools[m] }],
+            tool_choice: { type: "function", function: { name: tools[m].name } },
+          }),
         },
-      });
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Google AI Studio error ${res.status}`);
+      }
+
+      const data = await res.json();
       const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
       const parsed = args ? JSON.parse(args) : null;
       setResult(parsed);
       setSummary(parsed?.summary || "");
     } catch (e: any) {
-      const status = e?.status || e?.cause?.status;
-      if (status === 402) toast.error("Add credits to your Lovable AI workspace.");
-      else if (status === 429) toast.error("Rate limited — try again in a moment.");
-      else toast.error(e?.message || "AI request failed");
+      toast.error(e?.message || "AI request failed");
     } finally {
       setLoading(false);
     }
