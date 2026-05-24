@@ -40,7 +40,7 @@ export function ProfileCompletionBanner() {
           <div className="text-xs font-semibold">
             Profilingiz {pct}% to'ldirilgan — yaxshiroq tavsiyalar uchun yakunlang
           </div>
-          <Link to="/onboarding" className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">
+          <Link to="/settings" className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">
             Finish profile →
           </Link>
         </div>
