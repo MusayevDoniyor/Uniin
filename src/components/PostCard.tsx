@@ -157,8 +157,11 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
   const toggleCommentLike = (id: string) =>
     setLikedComments((s) => ({ ...s, [id]: !s[id] }));
 
-  const replyToComment = (name?: string) => {
-    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} ${v}`));
+  // Reply state — which comment id we're currently replying to
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
+  const replyToComment = (commentId: string, name?: string) => {
+    setReplyTo({ id: commentId, name: name || "" });
+    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} `));
     setTimeout(() => inputRef.current?.focus(), 30);
   };
 
@@ -169,9 +172,8 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "post_comments", filter: `post_id=eq.${post.id}` },
         async (payload: any) => {
-          // Fetch profile for the new comment
           const { data: p } = await supabase.from("profiles")
-            .select("id, full_name, avatar_url, user_type")
+            .select("id, username, full_name, avatar_url, user_type")
             .eq("id", payload.new.author_id).maybeSingle();
           setComments((cs) => {
             if (cs.some((c) => c.id === payload.new.id)) return cs;
@@ -190,7 +192,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
     if (next && comments.length === 0) {
       setCommentsLoading(true);
       const { data } = await supabase.from("post_comments")
-        .select("id, content, created_at, author_id, profiles!post_comments_author_id_fkey(id, full_name, avatar_url, user_type)")
+        .select("id, content, created_at, author_id, parent_id, profiles!post_comments_author_id_fkey(id, username, full_name, avatar_url, user_type)")
         .eq("post_id", post.id).order("created_at", { ascending: true });
       setComments(data || []);
       setCommentsLoading(false);
@@ -202,19 +204,30 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
     const text = newComment.trim();
     if (!text || !user || posting) return;
     setPosting(true);
-    const { data: profile } = await supabase.from("profiles").select("id, full_name, avatar_url, user_type").eq("user_id", user.id).single();
+    const { data: profile } = await supabase.from("profiles").select("id, username, full_name, avatar_url, user_type").eq("user_id", user.id).single();
     if (!profile) { setPosting(false); return; }
+    const insertData: any = { post_id: post.id, author_id: profile.id, content: text };
+    if (replyTo) insertData.parent_id = replyTo.id;
     const { data } = await supabase.from("post_comments")
-      .insert({ post_id: post.id, author_id: profile.id, content: text })
-      .select("id, content, created_at, author_id, profiles!post_comments_author_id_fkey(id, full_name, avatar_url, user_type)").single();
+      .insert(insertData)
+      .select("id, content, created_at, author_id, parent_id, profiles!post_comments_author_id_fkey(id, username, full_name, avatar_url, user_type)").single();
     if (data) {
       setComments((c) => c.some((x) => x.id === data.id) ? c : [...c, data]);
       setCommentCount((n) => n + 1);
     }
     setNewComment("");
+    setReplyTo(null);
     setPosting(false);
     inputRef.current?.focus();
   };
+
+  // Group comments by parent for nested rendering
+  const topLevelComments = useMemo(() => comments.filter((c) => !c.parent_id), [comments]);
+  const repliesByParent = useMemo(() => {
+    const m: Record<string, any[]> = {};
+    comments.forEach((c) => { if (c.parent_id) (m[c.parent_id] ||= []).push(c); });
+    return m;
+  }, [comments]);
 
   const chips = useMemo(() => extractScoreChips(post.content), [post.content]);
   const targetFlags = !isGU ? countriesToFlags(post.profiles.target_countries) : "";
