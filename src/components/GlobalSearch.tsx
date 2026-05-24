@@ -112,13 +112,13 @@ export function GlobalSearch() {
     if (c === "all" || c === "groups") {
       tasks.push((async () => {
         const { data } = await supabase.from("groups")
-          .select("id, name, description, member_count, category")
+          .select("id, slug, name, description, member_count, category")
           .or(`name.ilike.${like},description.ilike.${like},category.ilike.${like}`)
           .limit(c === "groups" ? 20 : 5);
         (data || []).forEach((g: any) => out.push({
           id: g.id, type: "groups", title: g.name,
           subtitle: `${g.member_count || 0} members · ${g.category || "General"}`,
-          to: "/groups",
+          to: "/groups/$slug", params: { slug: g.slug || g.id },
         }));
       })());
     }
