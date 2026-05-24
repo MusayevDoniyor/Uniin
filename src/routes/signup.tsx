@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
+import { PasswordStrength } from "@/components/PasswordStrength";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
-import { Loader2, GraduationCap, BookOpen } from "lucide-react";
+import { Loader2, GraduationCap, BookOpen, Mail, CheckCircle2 } from "lucide-react";
+import { isPasswordStrong } from "@/lib/password";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -16,16 +18,18 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [userType, setUserType] = useState<"gu" | "prep" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userType) return toast.error("Pick a user type");
+    if (!isPasswordStrong(password)) return toast.error("Parol yetarli kuchli emas");
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email, password,
@@ -36,11 +40,17 @@ function SignupPage() {
     });
     if (error) { setLoading(false); return toast.error(error.message); }
 
-    // Update profile with type (profile auto-created by trigger)
     if (data.user) {
       await supabase.from("profiles").update({ user_type: userType, full_name: fullName }).eq("user_id", data.user.id);
     }
     setLoading(false);
+
+    // If session is null, email confirmation is required
+    if (!data.session) {
+      setNeedsEmailConfirm(true);
+      setStep(3);
+      return;
+    }
     toast.success("Account created!");
     navigate({ to: "/onboarding" });
   };
@@ -53,7 +63,7 @@ function SignupPage() {
         <div className="flex justify-center mb-8"><Logo size="lg" /></div>
 
         <div className="surface-card p-8">
-          {step === 1 ? (
+          {step === 1 && (
             <>
               <h1 className="text-2xl font-bold mb-1">Join Uniin</h1>
               <p className="text-sm text-muted-foreground mb-6">First — what describes you?</p>
@@ -90,7 +100,9 @@ function SignupPage() {
                 Have an account? <Link to="/login" className="text-primary font-semibold hover:underline">Sign in</Link>
               </p>
             </>
-          ) : (
+          )}
+
+          {step === 2 && (
             <>
               <h1 className="text-2xl font-bold mb-1">Create your account</h1>
               <p className="text-sm text-muted-foreground mb-6">As a <span className={userType === "gu" ? "text-gold font-semibold" : "text-info font-semibold"}>{userType === "gu" ? "G.U. Student" : "Prep Student"}</span></p>
@@ -106,16 +118,38 @@ function SignupPage() {
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <PasswordInput id="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} className="mt-1.5" placeholder="At least 6 characters" />
+                  <PasswordInput id="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} className="mt-1.5" placeholder="8+ ta belgi, katta/kichik harf, raqam, maxsus belgi" />
+                  <PasswordStrength password={password} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                  <Button type="submit" className="flex-1 bg-primary hover:bg-accent" disabled={loading}>
+                  <Button type="submit" className="flex-1 bg-primary hover:bg-accent" disabled={loading || !isPasswordStrong(password)}>
                     {loading ? <Loader2 className="size-4 animate-spin" /> : "Create account"}
                   </Button>
                 </div>
               </form>
             </>
+          )}
+
+          {step === 3 && needsEmailConfirm && (
+            <div className="text-center space-y-4 py-4">
+              <div className="size-16 rounded-full bg-primary/15 text-primary flex items-center justify-center mx-auto">
+                <Mail className="size-8" />
+              </div>
+              <h1 className="text-2xl font-bold">Pochtangizni tekshiring</h1>
+              <p className="text-sm text-muted-foreground">
+                Biz <span className="font-semibold text-foreground">{email}</span> manziliga tasdiqlash xati yubordik.
+                Spam papkasini ham tekshirib chiqing.
+              </p>
+              <div className="bg-info/10 border border-info/30 rounded-lg p-3 text-left text-xs text-info flex gap-2">
+                <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
+                <span>Xatdagi havolani bosing — keyin tizimga kirib onboarding'ni davom ettiring.</span>
+              </div>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => setStep(2)}>Email almashtirish</Button>
+                <Button asChild className="bg-primary hover:bg-accent"><Link to="/login">Login sahifasi</Link></Button>
+              </div>
+            </div>
           )}
         </div>
       </div>

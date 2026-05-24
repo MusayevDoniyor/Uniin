@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Plus, X, Award, Calendar, Pencil, Upload, ImageIcon, Link as LinkIcon } from "lucide-react";
+import { Plus, X, Award, Calendar, Pencil, Upload, ImageIcon, Link as LinkIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { CERTIFICATE_PRESETS } from "@/lib/data/presets";
 
 export type Certification = {
   name: string;
@@ -28,9 +30,10 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [draft, setDraft] = useState<Certification>({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" });
   const [uploading, setUploading] = useState(false);
+  const [nameMode, setNameMode] = useState<"preset" | "custom">("preset");
 
-  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" }); setEditIdx(null); setOpen(true); };
-  const openEdit = (i: number) => { setDraft(value[i]); setEditIdx(i); setOpen(true); };
+  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" }); setEditIdx(null); setNameMode("preset"); setOpen(true); };
+  const openEdit = (i: number) => { setDraft(value[i]); setEditIdx(i); setNameMode(CERTIFICATE_PRESETS.includes(value[i].name as any) ? "preset" : "custom"); setOpen(true); };
   const save = () => {
     if (!draft.name.trim() || !draft.issuer.trim()) return;
     const next = [...value];
@@ -43,13 +46,16 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
   const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !user) return;
     setUploading(true);
-    const path = `${user.id}/cert-${Date.now()}-${file.name}`;
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/cert-${Date.now()}-${safe}`;
     const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     if (error) { toast.error(error.message); setUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
     setDraft(d => ({ ...d, image_url: publicUrl }));
     setUploading(false);
   };
+
+  const isPdf = (url?: string) => !!url && /\.pdf(\?|$)/i.test(url);
 
   return (
     <div className="space-y-2">
@@ -58,7 +64,13 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
           {value.map((c, i) => (
             <div key={i} className="surface-card p-3 flex items-start gap-3">
               {c.image_url ? (
-                <img src={c.image_url} alt={c.name} className="size-12 rounded-md object-cover shrink-0" />
+                isPdf(c.image_url) ? (
+                  <a href={c.image_url} target="_blank" rel="noreferrer" className="size-12 rounded-md bg-destructive/10 text-destructive flex items-center justify-center shrink-0" title="PDFni ko'rish">
+                    <FileText className="size-5" />
+                  </a>
+                ) : (
+                  <img src={c.image_url} alt={c.name} className="size-12 rounded-md object-cover shrink-0" />
+                )
               ) : (
                 <div className="size-12 rounded-md bg-gold/15 text-gold flex items-center justify-center shrink-0">
                   <Award className="size-5" />
@@ -92,7 +104,20 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Name *</Label>
-              <Input value={draft.name} maxLength={80} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="IELTS Academic" className="mt-1" />
+              {nameMode === "preset" ? (
+                <Select value={draft.name} onValueChange={(v) => { if (v === "__custom__") { setNameMode("custom"); setDraft(d => ({ ...d, name: "" })); } else { setDraft(d => ({ ...d, name: v })); } }}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Sertifikat turini tanlang" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {CERTIFICATE_PRESETS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    <SelectItem value="__custom__">+ Boshqa (o'zim yozaman)</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2 mt-1">
+                  <Input value={draft.name} maxLength={80} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="Sertifikat nomi" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setNameMode("preset")}>Ro'yxatdan</Button>
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-xs">Issuing organization *</Label>
@@ -107,14 +132,22 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
               <Input value={draft.credential_url || ""} onChange={e => setDraft(d => ({ ...d, credential_url: e.target.value }))} placeholder="https://..." className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs flex items-center gap-1"><ImageIcon className="size-3" /> Certificate image (optional)</Label>
+              <Label className="text-xs flex items-center gap-1"><ImageIcon className="size-3" /> Certificate (rasm yoki PDF — ixtiyoriy)</Label>
               <div className="mt-1 flex items-center gap-3">
-                {draft.image_url && <img src={draft.image_url} alt="preview" className="size-14 rounded-md object-cover border border-border" />}
+                {draft.image_url && (
+                  isPdf(draft.image_url) ? (
+                    <a href={draft.image_url} target="_blank" rel="noreferrer" className="size-14 rounded-md bg-destructive/10 text-destructive flex items-center justify-center border border-border" title="PDF">
+                      <FileText className="size-6" />
+                    </a>
+                  ) : (
+                    <img src={draft.image_url} alt="preview" className="size-14 rounded-md object-cover border border-border" />
+                  )
+                )}
                 <Label className="cursor-pointer">
                   <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-xs hover:bg-surface">
-                    <Upload className="size-3.5 mr-1.5" />{uploading ? "Uploading…" : draft.image_url ? "Replace image" : "Upload image"}
+                    <Upload className="size-3.5 mr-1.5" />{uploading ? "Uploading…" : draft.image_url ? "Almashtirish" : "Yuklash (rasm/PDF)"}
                   </span>
-                  <input type="file" accept="image/*" className="hidden" onChange={uploadImage} />
+                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={uploadImage} />
                 </Label>
                 {draft.image_url && (
                   <button type="button" onClick={() => setDraft(d => ({ ...d, image_url: "" }))} className="text-xs text-muted-foreground hover:text-destructive">Remove</button>

@@ -15,11 +15,13 @@ import { ScoreInput } from "@/components/ScoreInput";
 import { WordCountTextarea } from "@/components/WordCountTextarea";
 import { CertificateEditor, type Certification } from "@/components/CertificateEditor";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { CustomStatsEditor, type CustomStat } from "@/components/CustomStatsEditor";
+import { ExtracurricularUploader, type ECItem } from "@/components/ExtracurricularUploader";
 import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
 import {
   Loader2, Sun, Moon, Monitor, Upload, User, GraduationCap, Award,
-  Settings as SettingsIcon, ImageIcon, Trash2, Pencil,
+  Settings as SettingsIcon, ImageIcon, Trash2, Pencil, Activity,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -55,6 +57,8 @@ function Settings() {
         toefl_na: profile.toefl == null,
         intended_major: profile.intended_major || "",
         certifications: (profile.certifications as Certification[]) || [],
+        custom_stats: ((profile as any).custom_stats as CustomStat[]) || [],
+        extracurricular_items: ((profile as any).extracurricular_items as ECItem[]) || [],
       });
     }
   }, [profile]);
@@ -116,6 +120,9 @@ function Settings() {
       toefl: f.toefl_na || !f.toefl ? null : parseInt(f.toefl),
       intended_major: f.intended_major || null,
       certifications: f.certifications as any,
+      custom_stats: f.custom_stats as any,
+      extracurricular_items: f.extracurricular_items as any,
+      extracurriculars: (f.extracurricular_items as ECItem[]).map((e: ECItem) => e.title),
       theme_preference: theme,
     } as any).eq("user_id", user.id);
     setSaving(false);
@@ -134,9 +141,10 @@ function Settings() {
       </div>
 
       <Tabs defaultValue="profile">
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="profile"><User className="size-4 mr-1.5" />Profile</TabsTrigger>
           <TabsTrigger value="academic"><GraduationCap className="size-4 mr-1.5" />Academic</TabsTrigger>
+          <TabsTrigger value="extras"><Activity className="size-4 mr-1.5" />Activities</TabsTrigger>
           <TabsTrigger value="certs"><Award className="size-4 mr-1.5" />Certifications</TabsTrigger>
           <TabsTrigger value="appearance"><Sun className="size-4 mr-1.5" />Appearance</TabsTrigger>
         </TabsList>
@@ -246,6 +254,17 @@ function Settings() {
                   min={0} max={120} placeholder="105" suffix="/120" notTaken={f.toefl_na} onToggleNotTaken={v => update({ toefl_na: v })} />
               </div>
             </div>
+          </Section>
+
+          <Section title="Boshqa imtihonlar / ballar">
+            <CustomStatsEditor value={f.custom_stats} onChange={(v) => update({ custom_stats: v })} />
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="extras" className="space-y-4 mt-4">
+          <Section title="Faoliyatlar (Extracurriculars)">
+            <p className="text-xs text-muted-foreground mb-3">O'zingiz qilgan ishlarni kategoriya bo'yicha yuklang. Fayllar (rasm/PDF) va havolalar qo'shsa bo'ladi.</p>
+            <ExtracurricularUploader value={f.extracurricular_items} onChange={(v) => update({ extracurricular_items: v })} />
           </Section>
         </TabsContent>
 

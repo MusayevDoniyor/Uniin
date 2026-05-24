@@ -29,6 +29,19 @@ export function ScoreInput({
     if (raw === "" || /^\d*\.?\d*$/.test(raw)) onChange(raw);
   };
 
+  const handleBlur = () => {
+    if (notTaken || value === "") return;
+    const n = Number(value);
+    if (Number.isNaN(n)) return;
+    // Round to nearest step (e.g. 8.05 -> 8.0 for IELTS, 0.5 increments)
+    if (step && step !== 1) {
+      const rounded = Math.round(n / step) * step;
+      // Format: if step is whole, no decimals; if step has decimals, match precision
+      const decimals = step.toString().split(".")[1]?.length || 0;
+      onChange(rounded.toFixed(decimals));
+    }
+  };
+
   return (
     <div className={cn("space-y-1.5", notTaken && "opacity-60")}>
       <div className="flex items-center justify-between gap-2">
@@ -45,6 +58,7 @@ export function ScoreInput({
           disabled={notTaken}
           value={notTaken ? "" : value}
           onChange={e => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={notTaken ? "—" : placeholder}
           className={cn(invalid && "border-destructive focus-visible:ring-destructive", suffix && "pr-12")}
         />

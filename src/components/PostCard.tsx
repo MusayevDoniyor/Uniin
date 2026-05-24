@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "./UserBadge";
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles, Link2, Pencil, Trash2 } from "lucide-react";
+import { MessageCircle, Share2, Send, Smile, MoreHorizontal, Sparkles, Link2, Pencil, Trash2, Trophy, HelpCircle, BookOpen, FileEdit, BarChart3, Newspaper, Pencil as PencilIcon } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -41,14 +41,14 @@ type PostWithAuthor = {
   gu_uni?: { university_name: string; country: string } | null;
 };
 
-const POST_TYPE_LABEL: Record<string, { label: string; tone: string }> = {
-  win:       { label: "🏆 Win",         tone: "bg-gold/15 text-gold border-gold/30" },
-  question:  { label: "❓ Savol",       tone: "bg-info/15 text-info border-info/30" },
-  resource:  { label: "📚 Resurs",      tone: "bg-primary/15 text-primary border-primary/30" },
-  essay_tip: { label: "✍️ Essay tip",   tone: "bg-accent/15 text-accent-foreground border-accent/30" },
-  poll:      { label: "📊 So'rovnoma", tone: "bg-info/15 text-info border-info/30" },
-  article:   { label: "📰 Maqola",      tone: "bg-surface-2 text-foreground border-border" },
-  update:    { label: "",                tone: "" },
+const POST_TYPE_LABEL: Record<string, { label: string; tone: string; Icon: typeof Trophy }> = {
+  win:       { label: "Win",        tone: "bg-gold/15 text-gold border-gold/30",                       Icon: Trophy },
+  question:  { label: "Savol",      tone: "bg-info/15 text-info border-info/30",                       Icon: HelpCircle },
+  resource:  { label: "Resurs",     tone: "bg-primary/15 text-primary border-primary/30",              Icon: BookOpen },
+  essay_tip: { label: "Essay tip",  tone: "bg-accent/15 text-accent-foreground border-accent/30",      Icon: FileEdit },
+  poll:      { label: "So'rovnoma", tone: "bg-info/15 text-info border-info/30",                       Icon: BarChart3 },
+  article:   { label: "Maqola",     tone: "bg-surface-2 text-foreground border-border",                Icon: Newspaper },
+  update:    { label: "",            tone: "",                                                          Icon: PencilIcon },
 };
 
 /** Pull test-score chips like "IELTS: 7.0" / "SAT: 1390" / "GPA: 3.9" from content. */
@@ -290,8 +290,8 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
       {(postTypeMeta.label || post.profiles.intended_major || targetFlags || chips.length > 0) && (
         <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
           {postTypeMeta.label && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full border ${postTypeMeta.tone}`}>
-              {postTypeMeta.label}
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${postTypeMeta.tone}`}>
+              <postTypeMeta.Icon size={11} /> {postTypeMeta.label}
             </span>
           )}
           {post.profiles.intended_major && (
@@ -439,8 +439,8 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
 
           {/* Composer */}
           {user && (
-            <div className="flex gap-2 items-end pt-1">
-              <div className="flex-1 relative">
+            <div className="flex gap-2 items-center pt-1">
+              <div className="flex-1 relative flex items-center">
                 <textarea
                   ref={inputRef}
                   value={newComment}
@@ -453,11 +453,11 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
                   }}
                   rows={1}
                   placeholder="Izoh yozing..."
-                  className="w-full bg-surface-2 rounded-2xl pl-3 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none max-h-32"
+                  className="w-full bg-surface-2 rounded-full pl-4 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none leading-5 max-h-32"
                 />
                 <button
                   type="button"
-                  className="absolute right-2 bottom-2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   tabIndex={-1}
                   aria-label="Emoji"
                 >

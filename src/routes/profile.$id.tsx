@@ -158,9 +158,9 @@ function ProfilePage() {
         </div>
 
         <div className="px-5 md:px-8 pb-6 relative">
-          <div className="flex flex-col md:flex-row md:items-end gap-4 -mt-16 md:-mt-20">
-            {/* Avatar */}
-            <div className="relative shrink-1">
+          <div className="flex flex-col md:flex-row md:items-start gap-4 -mt-12 md:-mt-14">
+            {/* Avatar — sits over the cover */}
+            <div className="relative shrink-0">
               <Avatar className="size-24 md:size-28 border-[5px] border-card shadow-xl ring-1 ring-white/10">
                 <AvatarImage src={profile.avatar_url} />
                 <AvatarFallback className="text-2xl md:text-3xl font-display bg-navy-deep text-gold">{profile.full_name?.[0]}</AvatarFallback>
@@ -172,8 +172,8 @@ function ProfilePage() {
               )}
             </div>
 
-            {/* Name & Info */}
-            <div className="flex-1 min-w-0">
+            {/* Name & Info — sits BELOW the cover for readability */}
+            <div className="flex-1 min-w-0 md:pt-16">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{profile.full_name}</h1>
                 <UserBadge type={profile.user_type} />
@@ -195,7 +195,7 @@ function ProfilePage() {
 
             {/* Actions */}
             {!isMe && (
-              <div className="flex gap-2 mt-2 md:mt-0">
+              <div className="flex gap-2 mt-2 md:mt-16">
                 <Button onClick={toggleFollow} variant={following ? "outline" : "default"} className={following ? "" : "bg-primary hover:bg-accent shadow-lg"}>
                   {following ? <><UserCheck className="size-4 mr-1.5" /> Following</> : <><UserPlus className="size-4 mr-1.5" /> Follow</>}
                 </Button>
@@ -312,6 +312,9 @@ function ProfilePage() {
               <Stat label="SAT" value={profile.sat || "—"} />
               <Stat label="IELTS" value={profile.ielts || "—"} />
               <Stat label="TOEFL" value={profile.toefl || "—"} />
+              {(profile.custom_stats as any[])?.map((s: any, i: number) => (
+                <Stat key={i} label={s.label} value={s.value} />
+              ))}
             </div>
           </Section>
 
@@ -341,7 +344,32 @@ function ProfilePage() {
             </Section>
           )}
 
-          {profile.extracurriculars?.length > 0 && (
+          {(profile.extracurricular_items as any[])?.length > 0 ? (
+            <Section title="Extracurriculars">
+              <div className="space-y-3">
+                {Object.entries(((profile.extracurricular_items as any[]) || []).reduce((acc: any, it: any) => {
+                  (acc[it.category || "Other"] ||= []).push(it); return acc;
+                }, {})).map(([cat, items]: any) => (
+                  <div key={cat}>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{cat}</div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {items.map((it: any, i: number) => (
+                        <div key={i} className="surface-card p-3 bg-surface-2/40">
+                          <div className="text-sm font-semibold">{it.title}</div>
+                          {it.role && <div className="text-xs text-muted-foreground">{it.role}</div>}
+                          {it.description && <div className="text-xs text-muted-foreground mt-1 line-clamp-3">{it.description}</div>}
+                          <div className="flex gap-2 mt-1.5">
+                            {it.link && <a href={it.link} target="_blank" rel="noreferrer" className="text-[11px] text-info hover:underline">Havola</a>}
+                            {it.file_url && <a href={it.file_url} target="_blank" rel="noreferrer" className="text-[11px] text-primary hover:underline">Fayl</a>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          ) : profile.extracurriculars?.length > 0 && (
             <Section title="Extracurriculars">
               <div className="flex flex-wrap gap-1.5">{profile.extracurriculars.map((e: string) => <span key={e} className="px-3 py-1 text-xs rounded-full bg-surface-2 border border-border">{e}</span>)}</div>
             </Section>
