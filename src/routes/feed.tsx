@@ -110,6 +110,7 @@ function FeedPage() {
     setPosting(false);
     if (error) return toast.error(error.message);
     setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]); setMediaFiles([]);
+    setComposerOpen(false);
     toast.success("Posted!");
   };
 
