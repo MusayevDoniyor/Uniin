@@ -39,20 +39,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setTimeout(() => loadProfile(s.user.id).finally(() => setLoading(false)), 0);
       } else {
         setProfile(null);
+        setLoading(false);
       }
     });
 
+    const failSafe = window.setTimeout(() => setLoading(false), 5000);
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) loadProfile(s.user.id).finally(() => setLoading(false));
       else setLoading(false);
-    });
+    }).catch(() => setLoading(false)).finally(() => window.clearTimeout(failSafe));
 
-    return () => subscription.unsubscribe();
+    return () => { window.clearTimeout(failSafe); subscription.unsubscribe(); };
   }, []);
 
   const refreshProfile = async () => {
