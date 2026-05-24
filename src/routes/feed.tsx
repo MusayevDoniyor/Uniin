@@ -121,7 +121,20 @@ function FeedPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-2xl mx-auto px-3 md:px-4 py-4 md:py-6 space-y-3">
+      <ProfileCompletionBanner />
+
+      <Link to="/groups" className="surface-card p-3 flex items-center gap-3 hover:border-primary/40 transition-colors group">
+        <div className="size-9 rounded-full bg-primary/15 text-primary flex items-center justify-center">
+          <Users className="size-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold">Guruhlar</div>
+          <div className="text-xs text-muted-foreground">Sizning hamjamiyatingiz bilan suhbatlashing</div>
+        </div>
+        <span className="text-xs text-primary group-hover:translate-x-0.5 transition">Ko'rish →</span>
+      </Link>
+
       {/* LinkedIn-style composer entry */}
       <div className="surface-card p-3">
         <div className="flex items-center gap-3">
