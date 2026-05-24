@@ -271,14 +271,34 @@ function FeedPage() {
 
 
 
-      {loading ? <div className="text-center py-12 text-muted-foreground"><Loader2 className="size-6 animate-spin mx-auto" /></div>
-        : posts.length === 0 ? (
-          <div className="surface-card p-12 text-center">
-            <Sparkles className="size-10 text-primary mx-auto mb-3" />
-            <h3 className="font-semibold mb-1">Be the first to post</h3>
-            <p className="text-sm text-muted-foreground">Share your journey, ask a question, or drop a tip.</p>
-          </div>
-        ) : posts.map(p => <PostCard key={p.id} post={p} />)}
+      <Tabs value={feedTab} onValueChange={(v) => setFeedTab(v as any)} className="w-full">
+        <TabsList className="w-full grid grid-cols-2 bg-transparent border-b border-border rounded-none h-auto p-0">
+          <TabsTrigger value="foryou" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none py-2.5">For You</TabsTrigger>
+          <TabsTrigger value="following" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none py-2.5">Following</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="surface-card p-4 animate-pulse">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="size-10 rounded-full bg-surface-2" />
+                <div className="flex-1 space-y-2"><div className="h-3 w-1/3 bg-surface-2 rounded" /><div className="h-2 w-1/4 bg-surface-2 rounded" /></div>
+              </div>
+              <div className="h-3 w-full bg-surface-2 rounded mb-2" />
+              <div className="h-3 w-4/5 bg-surface-2 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="surface-card p-10 text-center">
+          <Sparkles className="size-10 text-primary mx-auto mb-3" />
+          <h3 className="font-semibold mb-1">{feedTab === "following" ? "Following feed empty" : "Be the first to post"}</h3>
+          <p className="text-sm text-muted-foreground mb-4">{feedTab === "following" ? "Follow students or mentors to see their posts." : "Share your journey, ask a question, or drop a tip."}</p>
+          <Link to="/explore" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-accent">Explore people →</Link>
+        </div>
+      ) : posts.map(p => <PostCard key={p.id} post={p} />)}
     </div>
   );
 }
