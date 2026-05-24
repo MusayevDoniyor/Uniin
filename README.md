@@ -23,24 +23,25 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 
 ## 🎯 Problems & Solutions
 
-| Problem | Who faces it | Our solution |
-|---|---|---|
-| Unverified "consultants" charge $500+ for outdated advice | PREP students & parents | **Verified G.U. badge** — every mentor proves admission with documents before earning the badge |
-| Genuine essays, SAT notes & test prep are gate-kept in private chats | PREP students | **Marketplace** with screenshot-protected previews + escrow-secured purchases |
-| Mentors have no way to earn from their expertise | G.U. students abroad | **Built-in monetization** — paid chats, calls, bookings & digital products with auto payout |
-| Generic AI chatbots don't know Uzbek context or university nuances | All students | **AI Advisor** with 4 specialized modes (Mentor, Essay, Strategy, Quick Q&A) |
-| Telegram groups are noisy, unsearchable, and have no reputation system | All students | **Community Groups** with structured posts, polls, reactions & moderation |
-| Booking a 1-on-1 with a senior abroad means juggling timezones in DMs | PREP & G.U. | **Sessions** module with scheduled video calls + escrow-protected payments |
-| Top universities (deadlines, requirements) are scattered across 100 sites | PREP students | **Universities** directory + **Deadline Reminders** with multi-stage alerts |
-| Application week stress: nothing reminds you "30 days till MIT EA" | PREP students | **Deadline Reminders** push notifications 30 / 7 / 1 day before |
-| No way to discover peers applying to the same schools | PREP students | **Explore** with smart filters (school, country, major, scores) |
-| Premium content can be screenshot & resold instantly | G.U. sellers | **Screenshot protection** + watermarking on paid listings |
+| Problem                                                                   | Who faces it            | Our solution                                                                                    |
+| ------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| Unverified "consultants" charge $500+ for outdated advice                 | PREP students & parents | **Verified G.U. badge** — every mentor proves admission with documents before earning the badge |
+| Genuine essays, SAT notes & test prep are gate-kept in private chats      | PREP students           | **Marketplace** with screenshot-protected previews + escrow-secured purchases                   |
+| Mentors have no way to earn from their expertise                          | G.U. students abroad    | **Built-in monetization** — paid chats, calls, bookings & digital products with auto payout     |
+| Generic AI chatbots don't know Uzbek context or university nuances        | All students            | **AI Advisor** with 4 specialized modes (Mentor, Essay, Strategy, Quick Q&A)                    |
+| Telegram groups are noisy, unsearchable, and have no reputation system    | All students            | **Community Groups** with structured posts, polls, reactions & moderation                       |
+| Booking a 1-on-1 with a senior abroad means juggling timezones in DMs     | PREP & G.U.             | **Sessions** module with scheduled video calls + escrow-protected payments                      |
+| Top universities (deadlines, requirements) are scattered across 100 sites | PREP students           | **Universities** directory + **Deadline Reminders** with multi-stage alerts                     |
+| Application week stress: nothing reminds you "30 days till MIT EA"        | PREP students           | **Deadline Reminders** push notifications 30 / 7 / 1 day before                                 |
+| No way to discover peers applying to the same schools                     | PREP students           | **Explore** with smart filters (school, country, major, scores)                                 |
+| Premium content can be screenshot & resold instantly                      | G.U. sellers            | **Screenshot protection** + watermarking on paid listings                                       |
 
 ---
 
 ## ✨ Full Feature List
 
 ### 🔐 Authentication & Onboarding
+
 - Email/password signup with strong-password meter (`PasswordStrength.tsx`)
 - Google OAuth sign-in
 - Multi-step **onboarding** (`/onboarding`) — user type, profile basics, academic profile, target universities
@@ -49,6 +50,7 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - Profile completion banner — nudges users to finish their profile for better recommendations
 
 ### 🏠 Feed (`/feed`)
+
 - LinkedIn-style global feed with rich post composer
 - Post types: **update**, **poll**, **media**, **article**
 - Reactions (like / celebrate / insightful / curious / support) via `ReactionBar.tsx`
@@ -59,12 +61,14 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - Group posts are filtered OUT of the global feed (only visible inside their community)
 
 ### 🔎 Explore (`/explore`)
+
 - People discovery feed — search by name, school, major, country
 - Filter by user type (PREP / G.U. / Mentors)
 - Smart sorting by `rank_score`
 - One-click follow / unfollow
 
 ### 👥 Community Groups
+
 - `/groups` — directory of all groups with categories & member counts
 - `/groups/$slug` — full group page with cover image, members, group-only feed
 - Auto-generated unique slugs (`generate_unique_group_slug` DB function)
@@ -73,6 +77,7 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - Public & private groups
 
 ### 💼 Marketplace (`/marketplace`)
+
 - Listing types: **essay**, **notes**, **test_prep**, **template**, **course**, **consultation**
 - **Free or paid** listings (USD)
 - Free preview percentage (default 10%) — buyer sees teaser before purchasing
@@ -82,6 +87,7 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - Purchase flow runs through wallet balance + escrow
 
 ### 🛡️ Escrow Payment Flow
+
 1. Buyer clicks **Buy** → wallet balance checked
 2. Funds debited and placed in `escrow_transactions` (status: `held`)
 3. **10% platform fee** + 90% seller payout calculated
@@ -90,6 +96,7 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 6. Both parties can view their escrow transactions in `/wallet`
 
 ### 💬 Messages (`/messages`)
+
 - 1-on-1 conversations powered by Supabase Realtime
 - Read receipts (`read_at`)
 - Auto-notification on new message
@@ -97,6 +104,7 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - File attachments support
 
 ### 📅 Sessions (`/sessions`)
+
 - Book 1-on-1 video sessions with G.U. mentors
 - Session types: video, voice, chat
 - **Paid sessions** — mentor's `booking_rate_usd` auto-deducted from buyer wallet into escrow
@@ -104,19 +112,21 @@ Think of it as **LinkedIn × Substack × Calendly × Discord**, hyper-focused on
 - Status lifecycle: scheduled → completed / cancelled
 
 ### 🎉 Events (`/events`)
+
 - G.U. students host webinars, AMAs, info-sessions
 - RSVP system with attendee counts (`update_event_attendee_count` trigger)
 - Event cover image, scheduled time, duration, max attendees, room URL
 
 ### 🤖 AI Advisor (`/ai`) — 4 specialized modes
+
 Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no user API key required).
 
-| Mode | Purpose | Best for |
-|---|---|---|
-| **Mentor** | Empathetic senior-student tone, general guidance, motivation, decisions | "Should I apply EA or RD to Stanford?" |
-| **Essay** | Common App / Supplement essay coach — structure, hooks, voice, line edits | "Review my Why-X essay for Yale" |
-| **Strategy** | Long-term roadmap — school list balancing, EC planning, score targets | "I'm a 10th grader with 3.9 GPA, design my 2-year plan" |
-| **Quick Q&A** | Snappy factual answers — deadlines, requirements, statistics | "MIT EA deadline 2026?" |
+| Mode          | Purpose                                                                   | Best for                                                |
+| ------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| **Mentor**    | Empathetic senior-student tone, general guidance, motivation, decisions   | "Should I apply EA or RD to Stanford?"                  |
+| **Essay**     | Common App / Supplement essay coach — structure, hooks, voice, line edits | "Review my Why-X essay for Yale"                        |
+| **Strategy**  | Long-term roadmap — school list balancing, EC planning, score targets     | "I'm a 10th grader with 3.9 GPA, design my 2-year plan" |
+| **Quick Q&A** | Snappy factual answers — deadlines, requirements, statistics              | "MIT EA deadline 2026?"                                 |
 
 - Conversations persisted per user in `ai_conversations` table
 - Multi-turn context preserved
@@ -124,27 +134,32 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 - Surfaces gateway errors (402 / 429) with specific messages
 
 ### 🏛️ Universities (`/universities`)
+
 - Searchable directory of global universities
 - **Deadline Reminders** — set custom deadlines per university with `[30, 7, 1]` day notification stages
 
 ### 💎 Premium (`/premium`)
+
 - Free tier vs. Premium G.U. tier
 - Premium G.U. unlocks **service rate setting** — charge for chats (`chat_rate_usd`), calls (`call_rate_usd`), and bookings (`booking_rate_usd`)
 - `PremiumGate.tsx` component gates Premium-only UI
 
 ### 💰 Wallet (`/wallet`)
+
 - USD balance, pending, total earned
 - **Manual top-up** flow (since automated payments are pending integration) — user submits intent, admin marks `completed`, `apply_manual_wallet_topup` trigger credits balance
 - Withdrawals (`withdrawals` table) with provider & status
 - Full escrow transaction history
 
 ### 🔔 Notifications (`/notifications`)
+
 - Real-time via Supabase Realtime (`NotificationListener.tsx`)
 - Auto-generated for: comments, likes, reactions, follows, messages, deadline reminders
 - Swipe-to-read on mobile
 - Mark all read / per-item
 
 ### 👤 Profile (`/profile/$id`)
+
 - Cover image + avatar (curated `AvatarPicker.tsx`)
 - Bio, location, school, intended major, dream universities
 - Academic stats: GPA, SAT, IELTS, TOEFL (`ScoreInput.tsx`)
@@ -158,12 +173,14 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 - Theme preference (dark/light) saved per profile
 
 ### ⚙️ Settings (`/settings`)
+
 - Edit personal & academic profile
 - **Service rates** section for Premium G.U. (chat / call / booking USD rates)
 - Theme toggle (light / dark)
 - Sign out
 
 ### 🧰 Cross-cutting
+
 - **Global Search** (`GlobalSearch.tsx`) with `⌘K` shortcut — users, posts, groups, listings
 - **Responsive shell** (`AppShell.tsx`) — collapsible sidebar on mobile/tablet, max-width clamp (`1600px`) so it doesn't stretch on TVs
 - **Theme system** with semantic OKLCH tokens in `src/styles.css`
@@ -174,6 +191,7 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 ## 🛠️ Tech Stack
 
 **Frontend**
+
 - React 19 + TypeScript (strict mode)
 - **TanStack Start** v1 (full-stack React framework, SSR-ready)
 - TanStack Router (file-based, type-safe)
@@ -184,6 +202,7 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 - date-fns
 
 **Backend**
+
 - **Lovable Cloud** (managed Supabase)
 - PostgreSQL with Row-Level Security on every table
 - Supabase Auth (email/password + Google OAuth)
@@ -192,9 +211,11 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 - TanStack `createServerFn` for typed RPC (e.g. AI gateway calls)
 
 **AI**
+
 - **Lovable AI Gateway** — `google/gemini-2.5-flash`, `gemini-2.5-pro`, `openai/gpt-5` family. No user API key required.
 
 **Build & Deploy**
+
 - Vite 7
 - Cloudflare Workers runtime (`wrangler.jsonc`) with `nodejs_compat`
 - Bun for package management
@@ -205,16 +226,16 @@ Powered by **Lovable AI Gateway** (Google Gemini & OpenAI GPT-5 family — no us
 
 Auto-provisioned by Lovable Cloud — see `.env`:
 
-| Variable | Scope | Purpose |
-|---|---|---|
-| `VITE_SUPABASE_URL` | client | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | client | Public anon key |
-| `VITE_SUPABASE_PROJECT_ID` | client | Project ref |
-| `SUPABASE_URL` | server | Same URL, server-side |
-| `SUPABASE_PUBLISHABLE_KEY` | server | Server-side anon |
-| `SUPABASE_SERVICE_ROLE_KEY` | server (secret) | Admin operations, bypasses RLS |
-| `SUPABASE_DB_URL` | server (secret) | Direct Postgres connection |
-| `LOVABLE_API_KEY` | server (secret) | AI Gateway authorization |
+| Variable                        | Scope           | Purpose                        |
+| ------------------------------- | --------------- | ------------------------------ |
+| `VITE_SUPABASE_URL`             | client          | Supabase project URL           |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | client          | Public anon key                |
+| `VITE_SUPABASE_PROJECT_ID`      | client          | Project ref                    |
+| `SUPABASE_URL`                  | server          | Same URL, server-side          |
+| `SUPABASE_PUBLISHABLE_KEY`      | server          | Server-side anon               |
+| `SUPABASE_SERVICE_ROLE_KEY`     | server (secret) | Admin operations, bypasses RLS |
+| `SUPABASE_DB_URL`               | server (secret) | Direct Postgres connection     |
+| `LOVABLE_API_KEY`               | server (secret) | AI Gateway authorization       |
 
 ---
 
@@ -331,18 +352,21 @@ Count syncers (`update_post_likes_count`, `update_post_comments_count`, `update_
 ## 🚧 Roadmap
 
 **Q3 2026**
+
 - Automated payments (Click, Payme, Stripe) → replace manual top-up
 - Mentor video sessions with built-in WebRTC room (Daily.co / LiveKit)
 - AI Essay scoring rubric with Common App-style breakdown
 - Mobile apps (React Native via Expo)
 
 **Q4 2026**
+
 - Scholarship database with personalized matching
 - Mock-interview AI (voice mode)
 - Group video study rooms
 - Application portfolio export (PDF) for parents/sponsors
 
 **2027**
+
 - Expand to Kazakhstan, Kyrgyzstan, Tajikistan
 - B2B offering for Uzbek schools (school admin dashboards)
 - Verified counselor program (paid certification)
@@ -352,15 +376,15 @@ Count syncers (`update_post_likes_count`, `update_post_comments_count`, `update_
 
 ## 👥 Team Bitrix
 
-| Member | Role |
-|---|---|
-| **Otabek Abduvaliyev** | Team Lead · Full-Stack |
-| **Doniyor Musayev** | Backend & Database |
-| **Abdurahmon Ikromov** | Frontend & UX |
-| **Bobojonov Sherzod** | AI & Integrations |
-| **Azamov Azamat** | Product & Design |
+| Member                 | Role                           |
+| ---------------------- | ------------------------------ |
+| **Otabek Abduvaliyev** | Team Lead · Frontend Developer |
+| **Doniyor Musayev**    | Fullstack Developer            |
+| **Abdurahmon Ikromov** | Marketing                      |
+| **Azamov Azamat**      | Frontend Developer             |
+| **Bobojonov Sherzod**  | Designer                       |
 
-Built at **Build with AI Ideathon 2026** — a joint initiative by **SQB (Silk Road Qishloq Bank)** and **New Uzbekistan University**.
+Built at **Build with AI Ideathon 2026** — a joint initiative by **SQB (Sanoat Qurilish Bank)** and **New Uzbekistan University**.
 
 ---
 
