@@ -372,9 +372,15 @@ function Marketplace() {
                 </div>
               </div>
             )}
-            <Button onClick={() => buy(active)} className="w-full mt-4 bg-primary hover:bg-accent">
-              {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
-            </Button>
+            {profile && active.seller_id === profile.id ? (
+              <div className="w-full mt-4 surface-card p-3 text-center text-sm text-muted-foreground">
+                Bu sizning listingingiz — o'zingiznikini sotib ololmaysiz.
+              </div>
+            ) : (
+              <Button onClick={() => buy(active)} className="w-full mt-4 bg-primary hover:bg-accent">
+                {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
+              </Button>
+            )}
           </>}
         </DialogContent>
       </Dialog>
