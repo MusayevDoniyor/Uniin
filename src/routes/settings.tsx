@@ -21,8 +21,10 @@ import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
 import {
   Loader2, Sun, Moon, Monitor, Upload, User, GraduationCap, Award,
-  Settings as SettingsIcon, ImageIcon, Trash2, Pencil, Activity,
+  Settings as SettingsIcon, ImageIcon, Trash2, Pencil, Activity, Crown,
+  MessageSquare, Phone, CalendarClock,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
   component: () => <RequireAuth><Settings /></RequireAuth>,
@@ -60,6 +62,9 @@ function Settings() {
         certifications: (profile.certifications as Certification[]) || [],
         custom_stats: ((profile as any).custom_stats as CustomStat[]) || [],
         extracurricular_items: ((profile as any).extracurricular_items as ECItem[]) || [],
+        chat_rate_usd: (profile as any).chat_rate_usd?.toString() || "",
+        call_rate_usd: (profile as any).call_rate_usd?.toString() || "",
+        booking_rate_usd: (profile as any).booking_rate_usd?.toString() || "",
       });
     }
   }, [profile]);
@@ -126,6 +131,9 @@ function Settings() {
       extracurricular_items: f.extracurricular_items as any,
       extracurriculars: (f.extracurricular_items as ECItem[]).map((e: ECItem) => e.title),
       theme_preference: theme,
+      chat_rate_usd: profile.is_premium && profile.user_type === "gu" && f.chat_rate_usd ? parseFloat(f.chat_rate_usd) : null,
+      call_rate_usd: profile.is_premium && profile.user_type === "gu" && f.call_rate_usd ? parseFloat(f.call_rate_usd) : null,
+      booking_rate_usd: profile.is_premium && profile.user_type === "gu" && f.booking_rate_usd ? parseFloat(f.booking_rate_usd) : null,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -227,6 +235,51 @@ function Settings() {
               <WordCountTextarea label="Bio" value={f.bio} onChange={v => update({ bio: v })} maxWords={80} rows={4} />
             </div>
           </Section>
+
+          {profile.user_type === "gu" && (
+            <Section title="Service rates">
+              {profile.is_premium ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <Crown className="size-3.5 text-gold" />
+                    Premium G.U. — set a price for your time. Leave blank to keep a service free.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="flex items-center gap-1.5"><MessageSquare className="size-3.5" /> Chat (per thread)</Label>
+                      <div className="relative mt-1.5">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input type="number" min="0" step="0.01" className="pl-7" placeholder="0" value={f.chat_rate_usd} onChange={e => update({ chat_rate_usd: e.target.value })} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1.5"><Phone className="size-3.5" /> Call (per session)</Label>
+                      <div className="relative mt-1.5">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input type="number" min="0" step="0.01" className="pl-7" placeholder="0" value={f.call_rate_usd} onChange={e => update({ call_rate_usd: e.target.value })} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-1.5"><CalendarClock className="size-3.5" /> Booking (per session)</Label>
+                      <div className="relative mt-1.5">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input type="number" min="0" step="0.01" className="pl-7" placeholder="0" value={f.booking_rate_usd} onChange={e => update({ booking_rate_usd: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">10% platform fee · funds released after 7 days via escrow.</p>
+                </>
+              ) : (
+                <div className="rounded-lg border border-gold/30 bg-gold/5 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm">
+                    <div className="font-semibold flex items-center gap-1.5"><Crown className="size-4 text-gold" /> Pullik service'lar Premium'da</div>
+                    <p className="text-xs text-muted-foreground mt-0.5">Chat, call va booking uchun narx qo'yish faqat Premium G.U. uchun.</p>
+                  </div>
+                  <Link to="/premium" className="px-3 py-1.5 rounded-md bg-gold text-gold-foreground text-xs font-semibold hover:bg-gold/90">Upgrade</Link>
+                </div>
+              )}
+            </Section>
+          )}
         </TabsContent>
 
         <TabsContent value="academic" className="space-y-4 mt-4">

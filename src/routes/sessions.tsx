@@ -28,18 +28,46 @@ function Sessions() {
   useEffect(() => {
     if (!user) return;
     supabase.from("sessions").select("*").or(`host_id.eq.${user.id},guest_id.eq.${user.id}`).order("scheduled_at").then(({ data }) => setSessions(data || []));
-    supabase.from("profiles").select("id, user_id, full_name").eq("onboarding_complete", true).limit(50).then(({ data }) => setPeople((data || []).filter(p => p.user_id !== user.id)));
+    supabase.from("profiles").select("id, user_id, full_name, booking_rate_usd, is_premium, user_type").eq("onboarding_complete", true).limit(50).then(({ data }) => setPeople((data || []).filter(p => p.user_id !== user.id)));
   }, [user]);
+
+  const selectedMentor = people.find(p => p.user_id === form.guest_user_id);
+  const bookingFee = Number(selectedMentor?.booking_rate_usd || 0);
 
   const schedule = async () => {
     if (!user || !form.guest_user_id || !form.title || !form.scheduled_at) return toast.error("Fill all fields");
+    if (form.guest_user_id === user.id) return toast.error("O'zingiz bilan session yarata olmaysiz.");
+
+    // Charge wallet if mentor has a booking rate
+    if (bookingFee > 0 && selectedMentor) {
+      let { data: wallet } = await supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle();
+      if (!wallet) {
+        const { data: w } = await supabase.from("wallets").insert({ user_id: user.id }).select().single();
+        wallet = w;
+      }
+      if (!wallet || Number(wallet.balance_usd) < bookingFee) {
+        toast.error("Yetarli balans yo'q. Avval hamyonni to'ldiring.");
+        window.location.href = "/wallet";
+        return;
+      }
+      const platformFee = +(bookingFee * 0.1).toFixed(2);
+      const sellerPayout = +(bookingFee - platformFee).toFixed(2);
+      const { error: e1 } = await supabase.from("wallets").update({ balance_usd: Number(wallet.balance_usd) - bookingFee }).eq("user_id", user.id);
+      if (e1) return toast.error(e1.message);
+      await supabase.from("escrow_transactions").insert({
+        buyer_id: user.id, seller_id: selectedMentor.id, listing_id: "00000000-0000-0000-0000-000000000000",
+        amount_usd: bookingFee, platform_fee_usd: platformFee, seller_payout_usd: sellerPayout,
+      } as any);
+    }
+
     const { error } = await supabase.from("sessions").insert({
       host_id: user.id, guest_id: form.guest_user_id, title: form.title,
       scheduled_at: new Date(form.scheduled_at).toISOString(),
       duration_minutes: form.duration_minutes, session_type: form.session_type, notes: form.notes,
     });
     if (error) return toast.error(error.message);
-    toast.success("Session scheduled!"); setOpen(false);
+    toast.success(bookingFee > 0 ? `Session bron qilindi · $${bookingFee.toFixed(2)} escrow'ga olindi` : "Session scheduled!");
+    setOpen(false);
     supabase.from("sessions").select("*").or(`host_id.eq.${user.id},guest_id.eq.${user.id}`).order("scheduled_at").then(({ data }) => setSessions(data || []));
   };
 
@@ -62,7 +90,11 @@ function Sessions() {
                 <Input placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
                 <Select value={form.guest_user_id} onValueChange={v => setForm(f => ({ ...f, guest_user_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select participant" /></SelectTrigger>
-                  <SelectContent>{people.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{people.map(p => (
+                    <SelectItem key={p.user_id} value={p.user_id}>
+                      {p.full_name}{Number(p.booking_rate_usd) > 0 ? ` · $${Number(p.booking_rate_usd).toFixed(2)}` : ""}
+                    </SelectItem>
+                  ))}</SelectContent>
                 </Select>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
                 <Select value={String(form.duration_minutes)} onValueChange={v => setForm(f => ({ ...f, duration_minutes: parseInt(v) }))}>
@@ -74,7 +106,16 @@ function Sessions() {
                   <SelectContent><SelectItem value="video">Video</SelectItem><SelectItem value="audio">Audio</SelectItem><SelectItem value="chat">Chat</SelectItem></SelectContent>
                 </Select>
                 <Textarea placeholder="Notes / agenda" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-                <Button onClick={schedule} className="w-full bg-primary">Schedule</Button>
+                {bookingFee > 0 && (
+                  <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs space-y-1">
+                    <div className="flex justify-between"><span>Booking fee</span><span>${bookingFee.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Platform (10%)</span><span>−${(bookingFee * 0.1).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50"><span>Mentor receives in 7 days</span><span>${(bookingFee * 0.9).toFixed(2)}</span></div>
+                  </div>
+                )}
+                <Button onClick={schedule} className="w-full bg-primary">
+                  {bookingFee > 0 ? `Pay $${bookingFee.toFixed(2)} & schedule` : "Schedule"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

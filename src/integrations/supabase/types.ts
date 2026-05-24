@@ -779,8 +779,11 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          booking_rate_usd: number | null
+          call_rate_usd: number | null
           certificates: string[] | null
           certifications: Json
+          chat_rate_usd: number | null
           city: string | null
           cover_image_url: string | null
           created_at: string | null
@@ -818,8 +821,11 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          booking_rate_usd?: number | null
+          call_rate_usd?: number | null
           certificates?: string[] | null
           certifications?: Json
+          chat_rate_usd?: number | null
           city?: string | null
           cover_image_url?: string | null
           created_at?: string | null
@@ -857,8 +863,11 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          booking_rate_usd?: number | null
+          call_rate_usd?: number | null
           certificates?: string[] | null
           certifications?: Json
+          chat_rate_usd?: number | null
           city?: string | null
           cover_image_url?: string | null
           created_at?: string | null

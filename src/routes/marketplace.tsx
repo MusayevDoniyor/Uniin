@@ -109,6 +109,9 @@ function Marketplace() {
 
   const buy = async (l: any) => {
     if (!user) return;
+    if (profile && l.seller_id === profile.id) {
+      return toast.error("O'zingizning listingingizni sotib ololmaysiz.");
+    }
     if (l.is_free) {
       await supabase.from("listing_purchases").insert({ listing_id: l.id, buyer_id: user.id, amount_usd: 0, status: "completed" as any });
       toast.success("Unlocked! Check Wallet for receipt.");
@@ -369,9 +372,15 @@ function Marketplace() {
                 </div>
               </div>
             )}
-            <Button onClick={() => buy(active)} className="w-full mt-4 bg-primary hover:bg-accent">
-              {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
-            </Button>
+            {profile && active.seller_id === profile.id ? (
+              <div className="w-full mt-4 surface-card p-3 text-center text-sm text-muted-foreground">
+                Bu sizning listingingiz — o'zingiznikini sotib ololmaysiz.
+              </div>
+            ) : (
+              <Button onClick={() => buy(active)} className="w-full mt-4 bg-primary hover:bg-accent">
+                {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
+              </Button>
+            )}
           </>}
         </DialogContent>
       </Dialog>
