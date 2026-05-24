@@ -28,7 +28,19 @@ function FeedPage() {
   const [posting, setPosting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const openComposer = (type?: typeof postType) => {
+    if (type) setPostType(type);
+    setComposerOpen(true);
+    setTimeout(() => taRef.current?.focus(), 50);
+  };
+  const closeComposer = () => {
+    setComposerOpen(false);
+    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]); setMediaFiles([]);
+  };
 
   const load = async () => {
     const { data } = await supabase.from("posts")
