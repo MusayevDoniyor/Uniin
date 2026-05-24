@@ -68,70 +68,78 @@ function Sessions() {
   const bookingFee = Number(selectedMentor?.booking_rate_usd || 0);
 
   const schedule = async () => {
-    if (!user || !form.guest_user_id || !form.title || !form.scheduled_at)
-      return toast.error("Fill all fields");
-    if (form.guest_user_id === user.id)
-      return toast.error("O'zingiz bilan session yarata olmaysiz.");
+    try {
+      if (!user || !form.guest_user_id || !form.title || !form.scheduled_at)
+        return toast.error("Fill all fields");
+      if (form.guest_user_id === user.id)
+        return toast.error("O'zingiz bilan session yarata olmaysiz.");
 
-    // Charge wallet if mentor has a booking rate
-    if (bookingFee > 0 && selectedMentor) {
-      let { data: wallet } = await supabase
-        .from("wallets")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!wallet) {
-        const { data: w } = await supabase
+      // Charge wallet if mentor has a booking rate
+      if (bookingFee > 0 && selectedMentor) {
+        let { data: wallet } = await supabase
           .from("wallets")
-          .insert({ user_id: user.id })
-          .select()
-          .single();
-        wallet = w;
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (!wallet) {
+          const { data: w } = await supabase
+            .from("wallets")
+            .insert({ user_id: user.id })
+            .select()
+            .single();
+          wallet = w;
+        }
+        if (!wallet || Number(wallet.balance_usd) < bookingFee) {
+          toast.error("Yetarli balans yo'q. Avval hamyonni to'ldiring.");
+          window.location.href = "/wallet";
+          return;
+        }
+        const platformFee = +(bookingFee * 0.2).toFixed(2);
+        const sellerPayout = +(bookingFee - platformFee).toFixed(2);
+        const { error: e2 } = await supabase.from("escrow_transactions").insert({
+          buyer_id: user.id,
+          seller_id: selectedMentor.id,
+          listing_id: "00000000-0000-0000-0000-000000000000",
+          amount_usd: bookingFee,
+          platform_fee_usd: platformFee,
+          seller_payout_usd: sellerPayout,
+        } as any);
+        if (e2) return toast.error(e2.message);
       }
-      if (!wallet || Number(wallet.balance_usd) < bookingFee) {
-        toast.error("Yetarli balans yo'q. Avval hamyonni to'ldiring.");
-        window.location.href = "/wallet";
-        return;
-      }
-      const platformFee = +(bookingFee * 0.2).toFixed(2);
-      const sellerPayout = +(bookingFee - platformFee).toFixed(2);
-      const { error: e1 } = await supabase
-        .from("wallets")
-        .update({ balance_usd: Number(wallet.balance_usd) - bookingFee })
-        .eq("user_id", user.id);
-      if (e1) return toast.error(e1.message);
-      await supabase.from("escrow_transactions").insert({
-        buyer_id: user.id,
-        seller_id: selectedMentor.id,
-        listing_id: "00000000-0000-0000-0000-000000000000",
-        amount_usd: bookingFee,
-        platform_fee_usd: platformFee,
-        seller_payout_usd: sellerPayout,
-      } as any);
-    }
 
-    const { error } = await supabase.from("sessions").insert({
-      host_id: user.id,
-      guest_id: form.guest_user_id,
-      title: form.title,
-      scheduled_at: new Date(form.scheduled_at).toISOString(),
-      duration_minutes: form.duration_minutes,
-      session_type: form.session_type,
-      notes: form.notes,
-    });
-    if (error) return toast.error(error.message);
-    toast.success(
-      bookingFee > 0
-        ? `Session bron qilindi · $${bookingFee.toFixed(2)} escrow'ga olindi`
-        : "Session scheduled!",
-    );
-    setOpen(false);
-    supabase
-      .from("sessions")
-      .select("*")
-      .or(`host_id.eq.${user.id},guest_id.eq.${user.id}`)
-      .order("scheduled_at")
-      .then(({ data }) => setSessions(data || []));
+      let formattedDate: string;
+      try {
+        formattedDate = new Date(form.scheduled_at).toISOString();
+      } catch (err) {
+        return toast.error("Yaroqli sana va vaqt kiriting.");
+      }
+
+      const { error } = await supabase.from("sessions").insert({
+        host_id: user.id,
+        guest_id: form.guest_user_id,
+        title: form.title,
+        scheduled_at: formattedDate,
+        duration_minutes: form.duration_minutes,
+        session_type: form.session_type,
+        notes: form.notes,
+      });
+      if (error) return toast.error(error.message);
+      toast.success(
+        bookingFee > 0
+          ? `Session bron qilindi · $${bookingFee.toFixed(2)} escrow'ga olindi`
+          : "Session scheduled!",
+      );
+      setOpen(false);
+      supabase
+        .from("sessions")
+        .select("*")
+        .or(`host_id.eq.${user.id},guest_id.eq.${user.id}`)
+        .order("scheduled_at")
+        .then(({ data }) => setSessions(data || []));
+    } catch (err: any) {
+      console.error("Booking error:", err);
+      toast.error(err?.message || "Kutilmagan xatolik yuz berdi.");
+    }
   };
 
   const upcoming = sessions.filter(

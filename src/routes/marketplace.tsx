@@ -257,12 +257,6 @@ function Marketplace() {
     }
     const platformFee = +(amount * 0.2).toFixed(2);
     const sellerPayout = +(amount - platformFee).toFixed(2);
-    // Deduct from buyer balance, create escrow holding seller payout
-    const { error: e1 } = await supabase
-      .from("wallets")
-      .update({ balance_usd: Number(wallet.balance_usd) - amount })
-      .eq("user_id", user.id);
-    if (e1) return toast.error(e1.message);
     const { error: e2 } = await supabase.from("escrow_transactions").insert({
       buyer_id: user.id,
       seller_id: l.seller_id,

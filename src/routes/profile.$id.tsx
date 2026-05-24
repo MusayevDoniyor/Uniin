@@ -7,12 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserBadge } from "@/components/UserBadge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { GraduationCap, MapPin, MessageSquare, Video, UserPlus, UserCheck, FileText, Loader2, Eye, Award, ThumbsUp, Crown, Plus } from "lucide-react";
+import { GraduationCap, MapPin, MessageSquare, UserPlus, UserCheck, FileText, Loader2, Eye, Award, ThumbsUp, Crown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PostCard } from "@/components/PostCard";
 import { PremiumLock } from "@/components/PremiumGate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { BookSessionDialog } from "@/components/BookSessionDialog";
 
 export const Route = createFileRoute("/profile/$id")({
   component: () => <RequireAuth><ProfilePage /></RequireAuth>,
@@ -206,7 +207,16 @@ function ProfilePage() {
                   {following ? <><UserCheck className="size-4 mr-1.5" /> Following</> : <><UserPlus className="size-4 mr-1.5" /> Follow</>}
                 </Button>
                 <Button onClick={startDM} variant="outline" className="shadow-lg"><MessageSquare className="size-4 mr-1.5" /> Message</Button>
-                {isGU && <Button variant="outline" className="shadow-lg"><Video className="size-4 mr-1.5" /> Book session</Button>}
+                {isGU && (
+                  <BookSessionDialog
+                    mentor={{
+                      id: profile.id,
+                      user_id: profile.user_id,
+                      full_name: profile.full_name,
+                      booking_rate_usd: profile.booking_rate_usd,
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
