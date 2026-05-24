@@ -127,7 +127,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
             </Link>
           );
         })}
-        <Link to="/profile/$id" params={{ id: profile?.id || "" }} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${loc.pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground"}`}>
+        <Link to="/profile/$id" params={{ id: (profile as any)?.username || profile?.id || "" }} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${loc.pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground"}`}>
           <User className="size-5" /><span className="text-[10px]">Me</span>
         </Link>
       </nav>
