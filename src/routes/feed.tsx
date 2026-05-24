@@ -56,25 +56,48 @@ function FeedPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const onPickFiles = (files: FileList | null) => {
+    if (!files) return;
+    const arr = Array.from(files).slice(0, 4 - mediaFiles.length);
+    setMediaFiles((m) => [...m, ...arr]);
+  };
+
   const submitPost = async () => {
-    if (!profile) return;
+    if (!profile || !user) return;
     const isPoll = postType === "poll";
     const cleanOpts = pollOptions.map((o) => o.trim()).filter(Boolean);
     if (isPoll) {
       if (!title.trim()) return toast.error("So'rovnoma uchun savol kerak");
       if (cleanOpts.length < 2) return toast.error("Kamida 2 ta variant kerak");
-    } else if (!content.trim()) return;
+    } else if (!content.trim() && mediaFiles.length === 0) return;
     setPosting(true);
+
+    // Upload media first
+    const media_urls: string[] = [];
+    if (mediaFiles.length) {
+      setUploadingMedia(true);
+      for (const file of mediaFiles) {
+        const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${user.id}/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage.from("post-media").upload(path, file, { upsert: false, cacheControl: "3600" });
+        if (upErr) { toast.error(upErr.message); setUploadingMedia(false); setPosting(false); return; }
+        const { data: { publicUrl } } = supabase.storage.from("post-media").getPublicUrl(path);
+        media_urls.push(publicUrl);
+      }
+      setUploadingMedia(false);
+    }
+
     const { error } = await supabase.from("posts").insert({
       author_id: profile.id,
       content: isPoll ? (content.trim() || title.trim()) : content.trim(),
       title: title.trim() || null,
       post_type: postType,
       poll_options: isPoll ? cleanOpts : null,
+      media_urls,
     });
     setPosting(false);
     if (error) return toast.error(error.message);
-    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]);
+    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]); setMediaFiles([]);
     toast.success("Posted!");
   };
 
@@ -120,28 +143,47 @@ function FeedPage() {
               </div>
             )}
 
-            {(content || postType === "poll") && (
+            {/* Media previews */}
+            {mediaFiles.length > 0 && (
+              <div className={`mt-3 grid gap-2 ${mediaFiles.length > 1 ? "grid-cols-2" : ""}`}>
+                {mediaFiles.map((f, i) => (
+                  <div key={i} className="relative rounded-lg overflow-hidden border border-border">
+                    <img src={URL.createObjectURL(f)} alt="" className="w-full max-h-64 object-cover" />
+                    <button type="button" onClick={() => setMediaFiles(m => m.filter((_, j) => j !== i))}
+                      className="absolute top-1 right-1 size-6 rounded-full bg-background/90 text-foreground flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground">
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(content || postType === "poll" || mediaFiles.length > 0) && (
               <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
                 <Select value={postType} onValueChange={v => setPostType(v as any)}>
                   <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="update">📝 Update</SelectItem>
-                    <SelectItem value="question">❓ Question</SelectItem>
-                    <SelectItem value="resource">📚 Resource</SelectItem>
-                    <SelectItem value="win">🎉 Application Win</SelectItem>
-                    <SelectItem value="essay_tip">✍️ Essay Tip</SelectItem>
-                    <SelectItem value="poll">📊 So'rovnoma</SelectItem>
+                    <SelectItem value="update"><span className="inline-flex items-center gap-1.5"><Pencil className="size-3.5" /> Update</span></SelectItem>
+                    <SelectItem value="question"><span className="inline-flex items-center gap-1.5"><HelpCircle className="size-3.5" /> Savol</span></SelectItem>
+                    <SelectItem value="resource"><span className="inline-flex items-center gap-1.5"><BookOpen className="size-3.5" /> Resurs</span></SelectItem>
+                    <SelectItem value="win"><span className="inline-flex items-center gap-1.5"><Trophy className="size-3.5" /> Win</span></SelectItem>
+                    <SelectItem value="essay_tip"><span className="inline-flex items-center gap-1.5"><FileEdit className="size-3.5" /> Essay tip</span></SelectItem>
+                    <SelectItem value="poll"><span className="inline-flex items-center gap-1.5"><BarChart3 className="size-3.5" /> So'rovnoma</span></SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="sm"><ImageIcon className="size-4" /></Button>
-                <Button onClick={submitPost} disabled={posting} className="ml-auto bg-primary hover:bg-accent" size="sm">
-                  {posting ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4 mr-1.5" /> Post</>}
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }} />
+                <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()} disabled={mediaFiles.length >= 4}>
+                  <ImageIcon className="size-4 mr-1" /> <span className="hidden sm:inline">Rasm</span>
+                </Button>
+                <Button onClick={submitPost} disabled={posting || uploadingMedia} className="ml-auto bg-primary hover:bg-accent" size="sm">
+                  {posting || uploadingMedia ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4 mr-1.5" /> Post</>}
                 </Button>
               </div>
             )}
           </div>
         </div>
       </div>
+
 
       {loading ? <div className="text-center py-12 text-muted-foreground"><Loader2 className="size-6 animate-spin mx-auto" /></div>
         : posts.length === 0 ? (
