@@ -257,6 +257,26 @@ function Marketplace() {
         )}
       </div>
 
+      {/* Hero category row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        {[
+          { v: "essay", l: "Essays", icon: FileEdit, color: "from-primary/20 to-primary/5" },
+          { v: "portfolio", l: "Portfolios", icon: Briefcase, color: "from-info/20 to-info/5" },
+          { v: "chat_call", l: "Calls", icon: Video, color: "from-success/20 to-success/5" },
+          { v: "full_package", l: "Full Packages", icon: Package, color: "from-gold/20 to-gold/5" },
+        ].map(c => {
+          const Icon = c.icon;
+          const active = filter === c.v;
+          return (
+            <button key={c.v} onClick={() => setFilter(active ? "all" : c.v)}
+              className={`surface-card p-3 sm:p-4 text-left transition-all bg-gradient-to-br ${c.color} ${active ? "border-primary ring-2 ring-primary/30" : "hover:border-primary/40"}`}>
+              <Icon className="size-5 sm:size-6 mb-1.5 text-foreground" />
+              <div className="text-sm font-semibold leading-tight">{c.l}</div>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filter pills */}
       <div className="flex gap-1.5 overflow-x-auto mb-4 -mx-1 px-1 pb-1">
         {[{ v: "all", l: "All" }, ...TYPES].map(t => (
