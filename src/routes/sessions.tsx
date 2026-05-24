@@ -6,8 +6,20 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Video, Plus, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -15,7 +27,11 @@ import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/sessions")({
-  component: () => <RequireAuth><Sessions /></RequireAuth>,
+  component: () => (
+    <RequireAuth>
+      <Sessions />
+    </RequireAuth>
+  ),
 });
 
 function Sessions() {
@@ -23,26 +39,53 @@ function Sessions() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState<any[]>([]);
-  const [form, setForm] = useState({ title: "", guest_user_id: "", scheduled_at: "", duration_minutes: 60, session_type: "video" as const, notes: "" });
+  const [form, setForm] = useState({
+    title: "",
+    guest_user_id: "",
+    scheduled_at: "",
+    duration_minutes: 60,
+    session_type: "video" as const,
+    notes: "",
+  });
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("sessions").select("*").or(`host_id.eq.${user.id},guest_id.eq.${user.id}`).order("scheduled_at").then(({ data }) => setSessions(data || []));
-    supabase.from("profiles").select("id, user_id, full_name, booking_rate_usd, is_premium, user_type").eq("onboarding_complete", true).limit(50).then(({ data }) => setPeople((data || []).filter(p => p.user_id !== user.id)));
+    supabase
+      .from("sessions")
+      .select("*")
+      .or(`host_id.eq.${user.id},guest_id.eq.${user.id}`)
+      .order("scheduled_at")
+      .then(({ data }) => setSessions(data || []));
+    supabase
+      .from("profiles")
+      .select("id, user_id, full_name, booking_rate_usd, is_premium, user_type")
+      .eq("onboarding_complete", true)
+      .limit(50)
+      .then(({ data }) => setPeople((data || []).filter((p) => p.user_id !== user.id)));
   }, [user]);
 
-  const selectedMentor = people.find(p => p.user_id === form.guest_user_id);
+  const selectedMentor = people.find((p) => p.user_id === form.guest_user_id);
   const bookingFee = Number(selectedMentor?.booking_rate_usd || 0);
 
   const schedule = async () => {
-    if (!user || !form.guest_user_id || !form.title || !form.scheduled_at) return toast.error("Fill all fields");
-    if (form.guest_user_id === user.id) return toast.error("O'zingiz bilan session yarata olmaysiz.");
+    if (!user || !form.guest_user_id || !form.title || !form.scheduled_at)
+      return toast.error("Fill all fields");
+    if (form.guest_user_id === user.id)
+      return toast.error("O'zingiz bilan session yarata olmaysiz.");
 
     // Charge wallet if mentor has a booking rate
     if (bookingFee > 0 && selectedMentor) {
-      let { data: wallet } = await supabase.from("wallets").select("*").eq("user_id", user.id).maybeSingle();
+      let { data: wallet } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (!wallet) {
-        const { data: w } = await supabase.from("wallets").insert({ user_id: user.id }).select().single();
+        const { data: w } = await supabase
+          .from("wallets")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
         wallet = w;
       }
       if (!wallet || Number(wallet.balance_usd) < bookingFee) {
@@ -50,29 +93,51 @@ function Sessions() {
         window.location.href = "/wallet";
         return;
       }
-      const platformFee = +(bookingFee * 0.1).toFixed(2);
+      const platformFee = +(bookingFee * 0.2).toFixed(2);
       const sellerPayout = +(bookingFee - platformFee).toFixed(2);
-      const { error: e1 } = await supabase.from("wallets").update({ balance_usd: Number(wallet.balance_usd) - bookingFee }).eq("user_id", user.id);
+      const { error: e1 } = await supabase
+        .from("wallets")
+        .update({ balance_usd: Number(wallet.balance_usd) - bookingFee })
+        .eq("user_id", user.id);
       if (e1) return toast.error(e1.message);
       await supabase.from("escrow_transactions").insert({
-        buyer_id: user.id, seller_id: selectedMentor.id, listing_id: "00000000-0000-0000-0000-000000000000",
-        amount_usd: bookingFee, platform_fee_usd: platformFee, seller_payout_usd: sellerPayout,
+        buyer_id: user.id,
+        seller_id: selectedMentor.id,
+        listing_id: "00000000-0000-0000-0000-000000000000",
+        amount_usd: bookingFee,
+        platform_fee_usd: platformFee,
+        seller_payout_usd: sellerPayout,
       } as any);
     }
 
     const { error } = await supabase.from("sessions").insert({
-      host_id: user.id, guest_id: form.guest_user_id, title: form.title,
+      host_id: user.id,
+      guest_id: form.guest_user_id,
+      title: form.title,
       scheduled_at: new Date(form.scheduled_at).toISOString(),
-      duration_minutes: form.duration_minutes, session_type: form.session_type, notes: form.notes,
+      duration_minutes: form.duration_minutes,
+      session_type: form.session_type,
+      notes: form.notes,
     });
     if (error) return toast.error(error.message);
-    toast.success(bookingFee > 0 ? `Session bron qilindi · $${bookingFee.toFixed(2)} escrow'ga olindi` : "Session scheduled!");
+    toast.success(
+      bookingFee > 0
+        ? `Session bron qilindi · $${bookingFee.toFixed(2)} escrow'ga olindi`
+        : "Session scheduled!",
+    );
     setOpen(false);
-    supabase.from("sessions").select("*").or(`host_id.eq.${user.id},guest_id.eq.${user.id}`).order("scheduled_at").then(({ data }) => setSessions(data || []));
+    supabase
+      .from("sessions")
+      .select("*")
+      .or(`host_id.eq.${user.id},guest_id.eq.${user.id}`)
+      .order("scheduled_at")
+      .then(({ data }) => setSessions(data || []));
   };
 
-  const upcoming = sessions.filter(s => new Date(s.scheduled_at) > new Date() && s.status !== "cancelled");
-  const past = sessions.filter(s => new Date(s.scheduled_at) <= new Date());
+  const upcoming = sessions.filter(
+    (s) => new Date(s.scheduled_at) > new Date() && s.status !== "cancelled",
+  );
+  const past = sessions.filter((s) => new Date(s.scheduled_at) <= new Date());
 
   return (
     <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-6">
@@ -82,35 +147,97 @@ function Sessions() {
           <p className="text-sm text-muted-foreground">Book 1:1 mentor calls or join events.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/events" className="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-surface">Events</Link>
+          <Link
+            to="/events"
+            className="px-3 py-1.5 rounded-md border border-border text-sm hover:bg-surface"
+          >
+            Events
+          </Link>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button className="bg-primary hover:bg-accent"><Plus className="size-4 mr-1.5" />Schedule</Button></DialogTrigger>
-            <DialogContent><DialogHeader><DialogTitle>Schedule session</DialogTitle></DialogHeader>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-accent">
+                <Plus className="size-4 mr-1.5" />
+                Schedule
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Schedule session</DialogTitle>
+              </DialogHeader>
               <div className="space-y-3">
-                <Input placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-                <Select value={form.guest_user_id} onValueChange={v => setForm(f => ({ ...f, guest_user_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select participant" /></SelectTrigger>
-                  <SelectContent>{people.map(p => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
-                      {p.full_name}{Number(p.booking_rate_usd) > 0 ? ` · $${Number(p.booking_rate_usd).toFixed(2)}` : ""}
-                    </SelectItem>
-                  ))}</SelectContent>
+                <Input
+                  placeholder="Title"
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                />
+                <Select
+                  value={form.guest_user_id}
+                  onValueChange={(v) => setForm((f) => ({ ...f, guest_user_id: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select participant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>
+                        {p.full_name}
+                        {Number(p.booking_rate_usd) > 0
+                          ? ` · $${Number(p.booking_rate_usd).toFixed(2)}`
+                          : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
-                <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
-                <Select value={String(form.duration_minutes)} onValueChange={v => setForm(f => ({ ...f, duration_minutes: parseInt(v) }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="30">30 min</SelectItem><SelectItem value="60">60 min</SelectItem><SelectItem value="90">90 min</SelectItem></SelectContent>
+                <Input
+                  type="datetime-local"
+                  value={form.scheduled_at}
+                  onChange={(e) => setForm((f) => ({ ...f, scheduled_at: e.target.value }))}
+                />
+                <Select
+                  value={String(form.duration_minutes)}
+                  onValueChange={(v) => setForm((f) => ({ ...f, duration_minutes: parseInt(v) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="60">60 min</SelectItem>
+                    <SelectItem value="90">90 min</SelectItem>
+                  </SelectContent>
                 </Select>
-                <Select value={form.session_type} onValueChange={v => setForm(f => ({ ...f, session_type: v as any }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="video">Video</SelectItem><SelectItem value="audio">Audio</SelectItem><SelectItem value="chat">Chat</SelectItem></SelectContent>
+                <Select
+                  value={form.session_type}
+                  onValueChange={(v) => setForm((f) => ({ ...f, session_type: v as any }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="audio">Audio</SelectItem>
+                    <SelectItem value="chat">Chat</SelectItem>
+                  </SelectContent>
                 </Select>
-                <Textarea placeholder="Notes / agenda" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+                <Textarea
+                  placeholder="Notes / agenda"
+                  value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                />
                 {bookingFee > 0 && (
                   <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs space-y-1">
-                    <div className="flex justify-between"><span>Booking fee</span><span>${bookingFee.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-muted-foreground"><span>Platform (10%)</span><span>−${(bookingFee * 0.1).toFixed(2)}</span></div>
-                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50"><span>Mentor receives in 7 days</span><span>${(bookingFee * 0.9).toFixed(2)}</span></div>
+                    <div className="flex justify-between">
+                      <span>Booking fee</span>
+                      <span>${bookingFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Platform (20%)</span>
+                      <span>−${(bookingFee * 0.2).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50">
+                      <span>Mentor receives in 7 days</span>
+                      <span>${(bookingFee * 0.8).toFixed(2)}</span>
+                    </div>
                   </div>
                 )}
                 <Button onClick={schedule} className="w-full bg-primary">
@@ -132,14 +259,36 @@ function Sessions() {
             <div className="surface-card p-10 text-center">
               <Video className="size-10 text-primary mx-auto mb-3" />
               <h3 className="font-semibold mb-1">No upcoming sessions</h3>
-              <p className="text-sm text-muted-foreground mb-4">Book your first session with a mentor.</p>
-              <Link to="/explore" className="inline-flex px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-accent">Find a mentor →</Link>
+              <p className="text-sm text-muted-foreground mb-4">
+                Book your first session with a mentor.
+              </p>
+              <Link
+                to="/explore"
+                className="inline-flex px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-accent"
+              >
+                Find a mentor →
+              </Link>
             </div>
-          ) : <div className="space-y-2">{upcoming.map(s => <SessionCard key={s.id} s={s} />)}</div>}
+          ) : (
+            <div className="space-y-2">
+              {upcoming.map((s) => (
+                <SessionCard key={s.id} s={s} />
+              ))}
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="past" className="mt-4">
-          {past.length === 0 ? <div className="surface-card p-6 text-sm text-muted-foreground text-center">No past sessions.</div>
-            : <div className="space-y-2">{past.map(s => <SessionCard key={s.id} s={s} past />)}</div>}
+          {past.length === 0 ? (
+            <div className="surface-card p-6 text-sm text-muted-foreground text-center">
+              No past sessions.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {past.map((s) => (
+                <SessionCard key={s.id} s={s} past />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
@@ -147,10 +296,15 @@ function Sessions() {
 }
 
 function SessionCard({ s, past }: any) {
-  const isLive = !past && Math.abs(new Date(s.scheduled_at).getTime() - Date.now()) < 1000 * 60 * 15;
+  const isLive =
+    !past && Math.abs(new Date(s.scheduled_at).getTime() - Date.now()) < 1000 * 60 * 15;
   return (
-    <div className={`surface-card p-4 flex items-center gap-4 ${isLive ? "border-success/50" : ""}`}>
-      <div className={`size-10 rounded-full flex items-center justify-center ${isLive ? "bg-success/20 text-success" : past ? "bg-surface-2 text-muted-foreground" : "bg-info/20 text-info"}`}>
+    <div
+      className={`surface-card p-4 flex items-center gap-4 ${isLive ? "border-success/50" : ""}`}
+    >
+      <div
+        className={`size-10 rounded-full flex items-center justify-center ${isLive ? "bg-success/20 text-success" : past ? "bg-surface-2 text-muted-foreground" : "bg-info/20 text-info"}`}
+      >
         <Video className="size-5" />
       </div>
       <div className="flex-1">
@@ -160,7 +314,11 @@ function SessionCard({ s, past }: any) {
           <Clock className="size-3 ml-2" /> {s.duration_minutes}min
         </div>
       </div>
-      {isLive && <Button size="sm" className="bg-success hover:bg-success/90">Join Now</Button>}
+      {isLive && (
+        <Button size="sm" className="bg-success hover:bg-success/90">
+          Join Now
+        </Button>
+      )}
     </div>
   );
 }

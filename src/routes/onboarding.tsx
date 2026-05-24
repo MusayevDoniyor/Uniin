@@ -69,7 +69,7 @@ function OnboardingPage() {
   if (!profile?.user_type) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <Logo size="lg" />
+        <Logo size="lg" variant="icon" />
         <p className="mt-6 text-muted-foreground">Pick your user type first.</p>
         <PickType onPicked={refreshProfile} userId={user.id} />
       </div>
@@ -138,7 +138,7 @@ function OnboardingPage() {
     <div className="min-h-screen px-4 py-8 bg-background">
       <div className="absolute top-4 right-4"><ThemeToggle /></div>
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-center mb-6"><Logo size="md" /></div>
+        <div className="flex justify-center mb-6"><Logo size="md" variant="icon" /></div>
         <div className="mb-6">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
             <span>Step {step} of {totalSteps}</span><span>{Math.round((step / totalSteps) * 100)}%</span>
