@@ -91,12 +91,12 @@ function ProfilePage() {
   }, [param, user]);
 
   const toggleFollow = async () => {
-    if (!user || isMe) return;
+    if (!user || isMe || !profile) return;
     if (following) {
-      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", id);
+      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", profile.id);
       setFollowing(false);
     } else {
-      await supabase.from("follows").insert({ follower_id: user.id, following_id: id });
+      await supabase.from("follows").insert({ follower_id: user.id, following_id: profile.id });
       setFollowing(true);
       toast.success(`Following ${profile.full_name}`);
     }
@@ -118,10 +118,10 @@ function ProfilePage() {
     if (!skill) return;
     const existing = endorsements.find((e) => e.skill === skill && e.mine);
     if (existing) {
-      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", id).eq("skill", skill);
+      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", profile.id).eq("skill", skill);
       setEndorsements((prev) => prev.map((e) => e.skill === skill ? { ...e, count: Math.max(0, e.count - 1), mine: false } : e).filter((e) => e.count > 0));
     } else {
-      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: id, skill });
+      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: profile.id, skill });
       if (error) return toast.error(error.message);
       setEndorsements((prev) => {
         const idx = prev.findIndex((e) => e.skill === skill);
