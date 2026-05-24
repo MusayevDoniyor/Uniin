@@ -203,7 +203,7 @@ function RightSidebar() {
 
   useEffect(() => {
     const load = async () => {
-      let q = supabase.from("profiles").select("id, full_name, avatar_url, user_type, city, intended_major, target_countries").eq("onboarding_complete", true).limit(5);
+      let q = supabase.from("profiles").select("id, username, full_name, avatar_url, user_type, city, intended_major, target_countries").eq("onboarding_complete", true).limit(5);
       if (user) q = q.neq("user_id", user.id);
       const { data } = await q;
       setPeople(data || []);
