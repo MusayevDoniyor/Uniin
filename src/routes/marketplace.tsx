@@ -64,6 +64,7 @@ type Form = {
   is_free: boolean;
   preview_content: string;
   cover_image_url: string;
+  full_content_url: string;
   tags: string[];
   what_included: string;
   delivery_time: string;
@@ -77,6 +78,7 @@ const EMPTY_FORM: Form = {
   is_free: false,
   preview_content: "",
   cover_image_url: "",
+  full_content_url: "",
   tags: [],
   what_included: "",
   delivery_time: "3 days",
@@ -91,6 +93,12 @@ function Marketplace() {
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [tagInput, setTagInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [purchasedIds, setPurchasedIds] = useState<string[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const isSeller = active && profile && active.seller_id === profile.id;
+  const hasPurchased = active && purchasedIds.includes(active.id);
+  const isUnlocked = isSeller || hasPurchased;
 
   const load = async () => {
     const { data } = await supabase
@@ -101,10 +109,21 @@ function Marketplace() {
       .eq("status", "active")
       .order("created_at", { ascending: false });
     setListings(data || []);
+
+    if (user) {
+      const { data: purchases } = await supabase
+        .from("listing_purchases")
+        .select("listing_id")
+        .eq("buyer_id", user.id)
+        .eq("status", "completed");
+      if (purchases) {
+        setPurchasedIds(purchases.map((p) => p.listing_id));
+      }
+    }
   };
   useEffect(() => {
     load();
-  }, []);
+  }, [user]);
 
   const addTag = () => {
     const v = tagInput.trim().toLowerCase();
@@ -127,6 +146,51 @@ function Marketplace() {
     setForm((f) => ({ ...f, cover_image_url: publicUrl }));
   };
 
+  const uploadResourceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) return toast.error("Max 50MB");
+    setUploadingFile(true);
+    const path = `${user.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("listing-content").upload(path, file);
+    setUploadingFile(false);
+    if (error) return toast.error(error.message);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("listing-content").getPublicUrl(path);
+    setForm((f) => ({ ...f, full_content_url: publicUrl }));
+    toast.success("Resource file uploaded successfully!");
+  };
+
+  const updateExistingListingFile = async (listingId: string, file: File) => {
+    if (!user) return;
+    if (file.size > 50 * 1024 * 1024) return toast.error("Max 50MB");
+    setUploadingFile(true);
+    const path = `${user.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("listing-content").upload(path, file);
+    if (error) {
+      setUploadingFile(false);
+      return toast.error(error.message);
+    }
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("listing-content").getPublicUrl(path);
+
+    const { error: updateError } = await supabase
+      .from("marketplace_listings")
+      .update({ full_content_url: publicUrl })
+      .eq("id", listingId);
+
+    setUploadingFile(false);
+
+    if (updateError) return toast.error(updateError.message);
+
+    toast.success("Resource file updated successfully!");
+    setActive((prev: any) => (prev ? { ...prev, full_content_url: publicUrl } : null));
+    load();
+  };
+
   const create = async () => {
     if (!profile || profile.user_type !== "gu")
       return toast.error("Only G.U. students can create listings.");
@@ -145,6 +209,7 @@ function Marketplace() {
       is_free: form.is_free,
       preview_content: form.preview_content,
       cover_image_url: form.cover_image_url || null,
+      full_content_url: form.full_content_url || null,
       tags: form.tags,
       what_included: form.what_included || null,
       delivery_time: form.delivery_time || null,
@@ -167,7 +232,7 @@ function Marketplace() {
         .from("listing_purchases")
         .insert({ listing_id: l.id, buyer_id: user.id, amount_usd: 0, status: "completed" as any });
       toast.success("Unlocked! Check Wallet for receipt.");
-      setActive(null);
+      setPurchasedIds((prev) => [...prev, l.id]);
       return;
     }
     const amount = Number(l.price_usd);
@@ -207,23 +272,19 @@ function Marketplace() {
       seller_payout_usd: sellerPayout,
     });
     if (e2) return toast.error(e2.message);
-    await supabase
-      .from("listing_purchases")
-      .insert({
-        listing_id: l.id,
-        buyer_id: user.id,
-        amount_usd: amount,
-        status: "completed" as any,
-      });
-    await supabase
-      .from("notifications")
-      .insert({
-        user_id: user.id,
-        type: "purchase",
-        content: `Escrow opened for "${l.title}". Funds release in 7 days.`,
-      });
+    await supabase.from("listing_purchases").insert({
+      listing_id: l.id,
+      buyer_id: user.id,
+      amount_usd: amount,
+      status: "completed" as any,
+    });
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      type: "purchase",
+      content: `Escrow opened for "${l.title}". Funds release in 7 days.`,
+    });
     toast.success("Purchase complete — funds held in escrow for 7 days.");
-    setActive(null);
+    setPurchasedIds((prev) => [...prev, l.id]);
   };
 
   const filtered = filter === "all" ? listings : listings.filter((l) => l.listing_type === filter);
@@ -423,6 +484,45 @@ function Marketplace() {
                   </div>
                 </div>
 
+                {/* Resource File (Only visible to buyers) */}
+                <div>
+                  <Label>Resource File (PDF, ZIP, DOCX, etc. — visible only to buyers)</Label>
+                  <label className="mt-1.5 cursor-pointer block">
+                    {form.full_content_url ? (
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface-2">
+                        <span className="text-xs truncate max-w-[80%] font-medium">
+                          {form.full_content_url.split("/").pop()?.replace(/^\d+-/, "") ||
+                            "resource-file"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, full_content_url: "" }))}
+                          className="size-7 rounded-full bg-background flex items-center justify-center border border-border"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50">
+                        {uploadingFile ? (
+                          <div className="text-xs animate-pulse">Uploading file...</div>
+                        ) : (
+                          <>
+                            <Upload className="size-5 mb-1" />
+                            <span className="text-xs">Upload resource file (max 50MB)</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={uploadResourceFile}
+                      disabled={uploadingFile}
+                    />
+                  </label>
+                </div>
+
                 <div>
                   <Label>Preview (10% — what buyers see before purchase)</Label>
                   <Textarea
@@ -593,58 +693,154 @@ function Marketplace() {
                   ))}
               </div>
 
-              <div
-                className="relative mt-4 surface-card p-4 no-screenshot"
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <ShieldCheck className="size-3 text-success" /> Screenshot protection · Preview
-                  (10%)
-                </div>
-                <div className="relative max-h-48 overflow-hidden">
-                  <p className="text-sm whitespace-pre-wrap">
-                    {active.preview_content || "No preview provided."}
+              {isUnlocked ? (
+                <div className="mt-4 surface-card p-4 border-2 border-dashed border-success/30 bg-success/5 space-y-4">
+                  <div className="flex items-center gap-2 text-success font-semibold text-sm">
+                    <ShieldCheck className="size-5" />
+                    Resource Unlocked
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isSeller
+                      ? "You are the owner of this listing. You can view or update the file below."
+                      : "You have purchased this resource. You have full access to download the file."}
                   </p>
-                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent flex items-end justify-center">
-                    <Lock className="size-5 text-muted-foreground mb-1" />
-                  </div>
-                </div>
-                <div className="text-center mt-3 text-xs text-muted-foreground">
-                  Purchase to unlock full content
-                </div>
-              </div>
-              {!active.is_free && active.escrow_enabled !== false && (
-                <div className="surface-card p-3 mt-4 bg-success/5 border-success/30">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-success mb-1.5">
-                    <ShieldCheck className="size-3.5" /> Escrow protected
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    <div className="flex justify-between">
-                      <span>Price</span>
-                      <span>${Number(active.price_usd).toFixed(2)}</span>
+
+                  {active.full_content_url ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-background border border-border rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                        <div className="p-2 bg-success/10 text-success rounded-md flex-shrink-0">
+                          <ShoppingBag className="size-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                            File Resource
+                          </div>
+                          <div className="text-sm font-semibold truncate max-w-[200px] sm:max-w-[300px]">
+                            {active.full_content_url.split("/").pop()?.replace(/^\d+-/, "") ||
+                              "download-resource"}
+                          </div>
+                        </div>
+                      </div>
+                      <a
+                        href={active.full_content_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="w-full sm:w-auto"
+                      >
+                        <Button className="w-full bg-success hover:bg-success/90 text-white font-medium">
+                          Download File
+                        </Button>
+                      </a>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Platform fee (20%)</span>
-                      <span>−${(Number(active.price_usd) * 0.2).toFixed(2)}</span>
+                  ) : (
+                    <div className="p-4 bg-background border border-border rounded-lg text-center space-y-1">
+                      <p className="text-sm font-medium">No downloadable file attached.</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isSeller
+                          ? "Upload the resource file below so buyers can download it."
+                          : "Please contact the seller or check the description for access details."}
+                      </p>
                     </div>
-                    <div className="flex justify-between text-foreground font-semibold pt-1 border-t border-border/50">
-                      <span>Seller receives in 7 days</span>
-                      <span>${(Number(active.price_usd) * 0.8).toFixed(2)}</span>
+                  )}
+
+                  {isSeller && (
+                    <div className="pt-2">
+                      <label className="cursor-pointer block">
+                        <div className="py-2 px-3 border border-dashed border-border rounded-md hover:border-primary/50 text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5 bg-background">
+                          {uploadingFile ? (
+                            <span className="animate-pulse">Uploading file...</span>
+                          ) : (
+                            <>
+                              <Upload className="size-4" />
+                              {active.full_content_url
+                                ? "Update resource file"
+                                : "Upload resource file"}
+                            </>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          disabled={uploadingFile}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) updateExistingListingFile(active.id, file);
+                          }}
+                        />
+                      </label>
                     </div>
+                  )}
+
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="text-xs text-muted-foreground mb-1.5 uppercase font-bold tracking-wider">
+                      Full Content / Preview:
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {active.preview_content}
+                    </p>
                   </div>
-                </div>
-              )}
-              {profile && active.seller_id === profile.id ? (
-                <div className="w-full mt-4 surface-card p-3 text-center text-sm text-muted-foreground">
-                  Bu sizning listingingiz — o'zingiznikini sotib ololmaysiz.
+
+                  <Button variant="outline" onClick={() => setActive(null)} className="w-full">
+                    Close
+                  </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={() => buy(active)}
-                  className="w-full mt-4 bg-primary hover:bg-accent"
-                >
-                  {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
-                </Button>
+                <>
+                  <div
+                    className="relative mt-4 surface-card p-4 no-screenshot"
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <ShieldCheck className="size-3 text-success" /> Screenshot protection ·
+                      Preview (10%)
+                    </div>
+                    <div className="relative max-h-48 overflow-hidden">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {active.preview_content || "No preview provided."}
+                      </p>
+                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent flex items-end justify-center">
+                        <Lock className="size-5 text-muted-foreground mb-1" />
+                      </div>
+                    </div>
+                    <div className="text-center mt-3 text-xs text-muted-foreground">
+                      Purchase to unlock full content
+                    </div>
+                  </div>
+                  {!active.is_free && active.escrow_enabled !== false && (
+                    <div className="surface-card p-3 mt-4 bg-success/5 border-success/30">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-success mb-1.5">
+                        <ShieldCheck className="size-3.5" /> Escrow protected
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>Price</span>
+                          <span>${Number(active.price_usd).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Platform fee (20%)</span>
+                          <span>−${(Number(active.price_usd) * 0.2).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-foreground font-semibold pt-1 border-t border-border/50">
+                          <span>Seller receives in 7 days</span>
+                          <span>${(Number(active.price_usd) * 0.8).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {profile && active.seller_id === profile.id ? (
+                    <div className="w-full mt-4 surface-card p-3 text-center text-sm text-muted-foreground">
+                      Bu sizning listingingiz — o'zingiznikini sotib ololmaysiz.
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => buy(active)}
+                      className="w-full mt-4 bg-primary hover:bg-accent"
+                    >
+                      {active.is_free ? "Get for free" : `Buy for $${active.price_usd} · Escrow`}
+                    </Button>
+                  )}
+                </>
               )}
             </>
           )}
