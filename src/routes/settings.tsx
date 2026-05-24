@@ -40,6 +40,7 @@ function Settings() {
     if (profile) {
       setF({
         full_name: profile.full_name || "",
+        username: (profile as any).username || "",
         avatar_url: profile.avatar_url || "",
         cover_image_url: (profile as any).cover_image_url || "",
         city: profile.city || "",
