@@ -132,14 +132,22 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
               <Input value={draft.credential_url || ""} onChange={e => setDraft(d => ({ ...d, credential_url: e.target.value }))} placeholder="https://..." className="mt-1" />
             </div>
             <div>
-              <Label className="text-xs flex items-center gap-1"><ImageIcon className="size-3" /> Certificate image (optional)</Label>
+              <Label className="text-xs flex items-center gap-1"><ImageIcon className="size-3" /> Certificate (rasm yoki PDF — ixtiyoriy)</Label>
               <div className="mt-1 flex items-center gap-3">
-                {draft.image_url && <img src={draft.image_url} alt="preview" className="size-14 rounded-md object-cover border border-border" />}
+                {draft.image_url && (
+                  isPdf(draft.image_url) ? (
+                    <a href={draft.image_url} target="_blank" rel="noreferrer" className="size-14 rounded-md bg-destructive/10 text-destructive flex items-center justify-center border border-border" title="PDF">
+                      <FileText className="size-6" />
+                    </a>
+                  ) : (
+                    <img src={draft.image_url} alt="preview" className="size-14 rounded-md object-cover border border-border" />
+                  )
+                )}
                 <Label className="cursor-pointer">
                   <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-xs hover:bg-surface">
-                    <Upload className="size-3.5 mr-1.5" />{uploading ? "Uploading…" : draft.image_url ? "Replace image" : "Upload image"}
+                    <Upload className="size-3.5 mr-1.5" />{uploading ? "Uploading…" : draft.image_url ? "Almashtirish" : "Yuklash (rasm/PDF)"}
                   </span>
-                  <input type="file" accept="image/*" className="hidden" onChange={uploadImage} />
+                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={uploadImage} />
                 </Label>
                 {draft.image_url && (
                   <button type="button" onClick={() => setDraft(d => ({ ...d, image_url: "" }))} className="text-xs text-muted-foreground hover:text-destructive">Remove</button>
