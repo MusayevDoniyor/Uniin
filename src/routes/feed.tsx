@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Image as ImageIcon, Send, Loader2, Sparkles, X, Trophy, HelpCircle, BookOpen, FileEdit, BarChart3, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { UserBadge } from "@/components/UserBadge";
