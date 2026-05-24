@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Home, Compass, ShoppingBag, Sparkles, MessageSquare, User, Bell, LogOut, Settings, Wallet, Crown, Plus, Search } from "lucide-react";
+import { Home, Compass, ShoppingBag, Sparkles, MessageSquare, User, Bell, LogOut, Settings, Wallet, Crown, Plus, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { UserBadge } from "@/components/UserBadge";
@@ -32,6 +32,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [wallet, setWallet] = useState<number | null>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -98,12 +99,23 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
   );
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px] bg-background">
       {/* Desktop / tablet sidebar */}
-      <aside className="hidden md:flex md:w-16 lg:w-60 shrink-0 flex-col border-r border-border p-2 lg:p-3 sticky top-0 h-screen">
-        <Link to="/feed" className="mb-6 px-2 py-1 flex items-center justify-center lg:justify-start">
-          <Logo size="lg" />
-        </Link>
+      <aside className={`hidden md:flex ${sidebarCollapsed ? "md:w-16" : "md:w-16 lg:w-60"} shrink-0 flex-col border-r border-border p-2 lg:p-3 sticky top-0 h-screen transition-[width] duration-200`}>
+        <div className="mb-6 flex items-center gap-2 px-2 py-1">
+          <Link to="/feed" className={`flex min-w-0 flex-1 items-center ${sidebarCollapsed ? "justify-center" : "justify-center lg:justify-start"}`}>
+            <Logo size={sidebarCollapsed ? "xs" : "lg"} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="hidden lg:flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-surface hover:text-foreground active:scale-95 transition"
+            title={sidebarCollapsed ? "Sidebarni ochish" : "Sidebarni yopish"}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+          </button>
+        </div>
         <nav className="flex-1 space-y-1">
           {PRIMARY.map(item => {
             const Icon = item.icon;
@@ -113,10 +125,10 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
               <Link key={item.to} to={item.to} title={item.label}
                 className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative ${active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground"}`}>
                 <Icon className="size-5 shrink-0" />
-                <span className="hidden lg:inline">{item.label}</span>
-                {showBadge && <span className="ml-auto hidden lg:inline-block size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">{unreadMsgs}</span>}
+                <span className={`hidden ${sidebarCollapsed ? "" : "lg:inline"}`}>{item.label}</span>
+                {showBadge && !sidebarCollapsed && <span className="ml-auto hidden lg:inline-flex size-5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold items-center justify-center">{unreadMsgs}</span>}
                 {/* Tablet tooltip */}
-                <span className="lg:hidden absolute left-full ml-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50">{item.label}</span>
+                <span className={`${sidebarCollapsed ? "lg:block" : "lg:hidden"} absolute left-full ml-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition z-50`}>{item.label}</span>
               </Link>
             );
           })}
@@ -126,12 +138,12 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
         <div className="mt-2 pt-2 border-t border-border flex items-center gap-2">
           <Link to="/profile/$id" params={{ id: profileHref }} className="flex items-center gap-2 flex-1 min-w-0 hover:bg-surface rounded-lg p-1.5 -m-1.5 transition-colors">
             <Avatar className="size-8 shrink-0"><AvatarImage src={profile?.avatar_url || undefined} /><AvatarFallback>{profile?.full_name?.[0] || "U"}</AvatarFallback></Avatar>
-            <div className="hidden lg:block flex-1 min-w-0">
+            <div className={`hidden ${sidebarCollapsed ? "" : "lg:block"} flex-1 min-w-0`}>
               <div className="text-xs font-semibold truncate leading-tight">{profile?.full_name || "You"}</div>
               <div className="text-[10px]"><UserBadge type={profile?.user_type} /></div>
             </div>
           </Link>
-          <Link to="/settings" title="Settings" className="hidden lg:flex p-1.5 rounded-md hover:bg-surface text-muted-foreground hover:text-foreground">
+          <Link to="/settings" title="Settings" className={`${sidebarCollapsed ? "hidden" : "hidden lg:flex"} p-1.5 rounded-md hover:bg-surface text-muted-foreground hover:text-foreground`}>
             <Settings className="size-4" />
           </Link>
         </div>
@@ -191,6 +203,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
       </nav>
 
       <NotificationListener />
+      </div>
     </div>
   );
 }
