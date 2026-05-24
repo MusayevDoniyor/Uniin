@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { UserBadge } from "@/components/UserBadge";
-import { ShoppingBag, Plus, Lock, ShieldCheck, X, Upload, Image as ImageIcon, Tag, Clock } from "lucide-react";
+import { ShoppingBag, Plus, Lock, ShieldCheck, X, Upload, Image as ImageIcon, Tag, Clock, FileEdit, Briefcase, Video, Package } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/marketplace")({
