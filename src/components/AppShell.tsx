@@ -75,7 +75,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
           })}
         </nav>
 
-        <button onClick={() => navigate({ to: "/profile/$id", params: { id: profile?.id || "" } })}
+        <button onClick={() => navigate({ to: "/profile/$id", params: { id: (profile as any)?.username || profile?.id || "" } })}
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors mt-2">
           <Avatar className="size-9">
             <AvatarImage src={profile?.avatar_url || undefined} />
