@@ -255,6 +255,17 @@ function Settings() {
               </div>
             </div>
           </Section>
+
+          <Section title="Boshqa imtihonlar / ballar">
+            <CustomStatsEditor value={f.custom_stats} onChange={(v) => update({ custom_stats: v })} />
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="extras" className="space-y-4 mt-4">
+          <Section title="Faoliyatlar (Extracurriculars)">
+            <p className="text-xs text-muted-foreground mb-3">O'zingiz qilgan ishlarni kategoriya bo'yicha yuklang. Fayllar (rasm/PDF) va havolalar qo'shsa bo'ladi.</p>
+            <ExtracurricularUploader value={f.extracurricular_items} onChange={(v) => update({ extracurricular_items: v })} />
+          </Section>
         </TabsContent>
 
         <TabsContent value="certs" className="space-y-4 mt-4">
