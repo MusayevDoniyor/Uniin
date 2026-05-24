@@ -21,8 +21,10 @@ import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
 import {
   Loader2, Sun, Moon, Monitor, Upload, User, GraduationCap, Award,
-  Settings as SettingsIcon, ImageIcon, Trash2, Pencil, Activity,
+  Settings as SettingsIcon, ImageIcon, Trash2, Pencil, Activity, Crown,
+  MessageSquare, Phone, CalendarClock,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
   component: () => <RequireAuth><Settings /></RequireAuth>,
