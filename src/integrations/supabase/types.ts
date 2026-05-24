@@ -771,9 +771,13 @@ export type Database = {
           city: string | null
           cover_image_url: string | null
           created_at: string | null
+          custom_stats: Json
+          date_of_birth: string | null
           dream_universities: string[] | null
+          extracurricular_items: Json
           extracurriculars: string[] | null
           full_name: string | null
+          gender: string | null
           gpa: number | null
           gpa_scale: number | null
           grade: string | null
@@ -805,9 +809,13 @@ export type Database = {
           city?: string | null
           cover_image_url?: string | null
           created_at?: string | null
+          custom_stats?: Json
+          date_of_birth?: string | null
           dream_universities?: string[] | null
+          extracurricular_items?: Json
           extracurriculars?: string[] | null
           full_name?: string | null
+          gender?: string | null
           gpa?: number | null
           gpa_scale?: number | null
           grade?: string | null
@@ -839,9 +847,13 @@ export type Database = {
           city?: string | null
           cover_image_url?: string | null
           created_at?: string | null
+          custom_stats?: Json
+          date_of_birth?: string | null
           dream_universities?: string[] | null
+          extracurricular_items?: Json
           extracurriculars?: string[] | null
           full_name?: string | null
+          gender?: string | null
           gpa?: number | null
           gpa_scale?: number | null
           grade?: string | null
