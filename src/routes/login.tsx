@@ -51,7 +51,7 @@ function LoginPage() {
       </div>
       <div className="relative w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <Logo size="lg" variant="icon" />
+          <Logo size="lg" />
         </div>
 
         <div className="surface-card p-8 shadow-2xl">
