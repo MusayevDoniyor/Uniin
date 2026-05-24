@@ -131,6 +131,8 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
           <User className="size-5" /><span className="text-[10px]">Me</span>
         </Link>
       </nav>
+      <NotificationListener />
     </div>
+
   );
 }
