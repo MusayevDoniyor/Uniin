@@ -90,7 +90,11 @@ function Sessions() {
                 <Input placeholder="Title" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
                 <Select value={form.guest_user_id} onValueChange={v => setForm(f => ({ ...f, guest_user_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select participant" /></SelectTrigger>
-                  <SelectContent>{people.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent>
+                  <SelectContent>{people.map(p => (
+                    <SelectItem key={p.user_id} value={p.user_id}>
+                      {p.full_name}{Number(p.booking_rate_usd) > 0 ? ` · $${Number(p.booking_rate_usd).toFixed(2)}` : ""}
+                    </SelectItem>
+                  ))}</SelectContent>
                 </Select>
                 <Input type="datetime-local" value={form.scheduled_at} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} />
                 <Select value={String(form.duration_minutes)} onValueChange={v => setForm(f => ({ ...f, duration_minutes: parseInt(v) }))}>
@@ -102,7 +106,16 @@ function Sessions() {
                   <SelectContent><SelectItem value="video">Video</SelectItem><SelectItem value="audio">Audio</SelectItem><SelectItem value="chat">Chat</SelectItem></SelectContent>
                 </Select>
                 <Textarea placeholder="Notes / agenda" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-                <Button onClick={schedule} className="w-full bg-primary">Schedule</Button>
+                {bookingFee > 0 && (
+                  <div className="rounded-md border border-gold/30 bg-gold/5 p-3 text-xs space-y-1">
+                    <div className="flex justify-between"><span>Booking fee</span><span>${bookingFee.toFixed(2)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Platform (10%)</span><span>−${(bookingFee * 0.1).toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50"><span>Mentor receives in 7 days</span><span>${(bookingFee * 0.9).toFixed(2)}</span></div>
+                  </div>
+                )}
+                <Button onClick={schedule} className="w-full bg-primary">
+                  {bookingFee > 0 ? `Pay $${bookingFee.toFixed(2)} & schedule` : "Schedule"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
