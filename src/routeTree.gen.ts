@@ -120,9 +120,9 @@ const ProfileIdRoute = ProfileIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupsSlugRoute = GroupsSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => GroupsRoute,
+  id: '/groups/$slug',
+  path: '/groups/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -272,6 +272,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   UniversitiesRoute: typeof UniversitiesRoute
   WalletRoute: typeof WalletRoute
+  GroupsSlugRoute: typeof GroupsSlugRoute
   ProfileIdRoute: typeof ProfileIdRoute
   GroupsIndexRoute: typeof GroupsIndexRoute
 }
@@ -406,10 +407,10 @@ declare module '@tanstack/react-router' {
     }
     '/groups/$slug': {
       id: '/groups/$slug'
-      path: '/$slug'
+      path: '/groups/$slug'
       fullPath: '/groups/$slug'
       preLoaderRoute: typeof GroupsSlugRouteImport
-      parentRoute: typeof GroupsRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -431,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   UniversitiesRoute: UniversitiesRoute,
   WalletRoute: WalletRoute,
+  GroupsSlugRoute: GroupsSlugRoute,
   ProfileIdRoute: ProfileIdRoute,
   GroupsIndexRoute: GroupsIndexRoute,
 }
