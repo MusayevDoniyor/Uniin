@@ -795,13 +795,19 @@ function Marketplace() {
                       <ShieldCheck className="size-3 text-success" /> Screenshot protection ·
                       Preview (10%)
                     </div>
-                    <div className="relative max-h-48 overflow-hidden">
-                      <p className="text-sm whitespace-pre-wrap">
+                    <div className="relative max-h-48 overflow-hidden bg-background/50 p-3 rounded-lg border border-border/50">
+                      <p className="text-sm whitespace-pre-wrap pr-4 leading-relaxed">
                         {active.preview_content || "No preview provided."}
                       </p>
-                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card to-transparent flex items-end justify-center">
-                        <Lock className="size-5 text-muted-foreground mb-1" />
-                      </div>
+                      {active.preview_content && active.preview_content.length > 80 ? (
+                        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent flex items-end justify-center">
+                          <Lock className="size-4 text-muted-foreground mb-1" />
+                        </div>
+                      ) : (
+                        <div className="absolute right-2 top-2 p-1 bg-surface-2/80 rounded border border-border text-muted-foreground flex items-center justify-center">
+                          <Lock className="size-3" />
+                        </div>
+                      )}
                     </div>
                     <div className="text-center mt-3 text-xs text-muted-foreground">
                       Purchase to unlock full content
