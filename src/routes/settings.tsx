@@ -129,6 +129,9 @@ function Settings() {
       extracurricular_items: f.extracurricular_items as any,
       extracurriculars: (f.extracurricular_items as ECItem[]).map((e: ECItem) => e.title),
       theme_preference: theme,
+      chat_rate_usd: profile.is_premium && profile.user_type === "gu" && f.chat_rate_usd ? parseFloat(f.chat_rate_usd) : null,
+      call_rate_usd: profile.is_premium && profile.user_type === "gu" && f.call_rate_usd ? parseFloat(f.call_rate_usd) : null,
+      booking_rate_usd: profile.is_premium && profile.user_type === "gu" && f.booking_rate_usd ? parseFloat(f.booking_rate_usd) : null,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
