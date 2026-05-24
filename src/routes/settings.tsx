@@ -60,6 +60,9 @@ function Settings() {
         certifications: (profile.certifications as Certification[]) || [],
         custom_stats: ((profile as any).custom_stats as CustomStat[]) || [],
         extracurricular_items: ((profile as any).extracurricular_items as ECItem[]) || [],
+        chat_rate_usd: (profile as any).chat_rate_usd?.toString() || "",
+        call_rate_usd: (profile as any).call_rate_usd?.toString() || "",
+        booking_rate_usd: (profile as any).booking_rate_usd?.toString() || "",
       });
     }
   }, [profile]);
