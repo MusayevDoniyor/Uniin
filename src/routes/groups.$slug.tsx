@@ -156,21 +156,33 @@ function GroupDetail() {
 
       {/* Composer */}
       {(joined || isCreator) && user && (
-        <div className="surface-card p-4">
-          <textarea
-            value={composer}
-            onChange={(e) => setComposer(e.target.value)}
-            placeholder="Guruhga nimadir yozing..."
-            rows={3}
-            className="w-full bg-surface-2 rounded-lg p-3 text-sm border border-border focus:outline-none focus:border-primary resize-none"
-          />
-          <div className="flex justify-end mt-2">
-            <Button onClick={createPost} disabled={!composer.trim() || posting} className="bg-primary hover:bg-accent">
-              <Send className="size-4 mr-1.5" /> {posting ? "Yuborilmoqda..." : "Yuborish"}
-            </Button>
+        <div className="surface-card p-3">
+          <div className="flex items-start gap-3">
+            <Avatar className="size-10 ring-2 ring-border">
+              <AvatarImage src={(user as any)?.user_metadata?.avatar_url} />
+              <AvatarFallback>{(user.email || "U")[0].toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <textarea
+                value={composer}
+                onChange={(e) => setComposer(e.target.value)}
+                placeholder={`${group.name} guruhiga nimadir yozing...`}
+                rows={composer ? 4 : 1}
+                className="w-full bg-transparent border-0 focus:outline-none resize-none text-sm placeholder:text-muted-foreground py-2"
+              />
+              {composer && (
+                <div className="flex justify-end items-center gap-2 pt-2 border-t border-border">
+                  <Button size="sm" variant="ghost" onClick={() => setComposer("")}>Bekor qilish</Button>
+                  <Button onClick={createPost} disabled={!composer.trim() || posting} size="sm" className="bg-primary hover:bg-accent rounded-full px-5">
+                    {posting ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4 mr-1.5" /> Yuborish</>}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
+
 
       {/* Members preview */}
       {members.length > 0 && (
