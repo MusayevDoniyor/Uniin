@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Plus, X, Award, Calendar, Pencil, Upload, ImageIcon, Link as LinkIcon } from "lucide-react";
+import { Plus, X, Award, Calendar, Pencil, Upload, ImageIcon, Link as LinkIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { CERTIFICATE_PRESETS } from "@/lib/data/presets";
 
 export type Certification = {
   name: string;
@@ -28,9 +30,10 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [draft, setDraft] = useState<Certification>({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" });
   const [uploading, setUploading] = useState(false);
+  const [nameMode, setNameMode] = useState<"preset" | "custom">("preset");
 
-  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" }); setEditIdx(null); setOpen(true); };
-  const openEdit = (i: number) => { setDraft(value[i]); setEditIdx(i); setOpen(true); };
+  const openNew = () => { setDraft({ name: "", issuer: "", issue_date: "", credential_url: "", image_url: "" }); setEditIdx(null); setNameMode("preset"); setOpen(true); };
+  const openEdit = (i: number) => { setDraft(value[i]); setEditIdx(i); setNameMode(CERTIFICATE_PRESETS.includes(value[i].name as any) ? "preset" : "custom"); setOpen(true); };
   const save = () => {
     if (!draft.name.trim() || !draft.issuer.trim()) return;
     const next = [...value];
@@ -43,13 +46,16 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
   const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !user) return;
     setUploading(true);
-    const path = `${user.id}/cert-${Date.now()}-${file.name}`;
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/cert-${Date.now()}-${safe}`;
     const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     if (error) { toast.error(error.message); setUploading(false); return; }
     const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
     setDraft(d => ({ ...d, image_url: publicUrl }));
     setUploading(false);
   };
+
+  const isPdf = (url?: string) => !!url && /\.pdf(\?|$)/i.test(url);
 
   return (
     <div className="space-y-2">
