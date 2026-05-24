@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/groups")({
+export const Route = createFileRoute("/groups/")({
   component: () => <RequireAuth><Groups /></RequireAuth>,
 });
 
