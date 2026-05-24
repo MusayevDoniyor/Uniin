@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Image as ImageIcon, Send, Loader2, Sparkles, X, Trophy, HelpCircle, BookOpen, FileEdit, BarChart3, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { UserBadge } from "@/components/UserBadge";
@@ -28,7 +29,19 @@ function FeedPage() {
   const [posting, setPosting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const openComposer = (type?: typeof postType) => {
+    if (type) setPostType(type);
+    setComposerOpen(true);
+    setTimeout(() => taRef.current?.focus(), 50);
+  };
+  const closeComposer = () => {
+    setComposerOpen(false);
+    setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]); setMediaFiles([]);
+  };
 
   const load = async () => {
     const { data } = await supabase.from("posts")
@@ -98,27 +111,89 @@ function FeedPage() {
     setPosting(false);
     if (error) return toast.error(error.message);
     setContent(""); setTitle(""); setPostType("update"); setPollOptions(["", ""]); setMediaFiles([]);
+    setComposerOpen(false);
     toast.success("Posted!");
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      {/* Composer */}
-      <div className="surface-card p-4">
-        <div className="flex gap-3">
-          <Avatar className="size-10"><AvatarImage src={profile?.avatar_url || undefined} /><AvatarFallback>{profile?.full_name?.[0]}</AvatarFallback></Avatar>
-          <div className="flex-1">
+      {/* LinkedIn-style composer entry */}
+      <div className="surface-card p-3">
+        <div className="flex items-center gap-3">
+          <Link to="/profile/$id" params={{ id: profile?.username || profile?.id || "" }}>
+            <Avatar className="size-11 ring-2 ring-border hover:ring-primary transition">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback>{profile?.full_name?.[0]}</AvatarFallback>
+            </Avatar>
+          </Link>
+          <button
+            onClick={() => openComposer("update")}
+            className="flex-1 text-left text-sm text-muted-foreground bg-surface-2 hover:bg-surface border border-border rounded-full px-4 py-2.5 transition"
+          >
+            Nima haqida o'ylayapsiz, {profile?.full_name?.split(" ")[0] || "do'st"}?
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 mt-2 pt-2 border-t border-border">
+          <button onClick={() => { openComposer("update"); setTimeout(() => fileRef.current?.click(), 100); }}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-surface-2 transition">
+            <ImageIcon className="size-4 text-info" /> Rasm
+          </button>
+          <button onClick={() => openComposer("poll")}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-surface-2 transition">
+            <BarChart3 className="size-4 text-warning" /> So'rovnoma
+          </button>
+          <button onClick={() => openComposer("question")}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-surface-2 transition">
+            <HelpCircle className="size-4 text-primary" /> Savol
+          </button>
+          <button onClick={() => openComposer("win")}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium text-muted-foreground hover:bg-surface-2 transition">
+            <Trophy className="size-4 text-gold" /> Yutuq
+          </button>
+        </div>
+      </div>
+
+      {/* Composer Modal */}
+      <Dialog open={composerOpen} onOpenChange={(v) => !v && closeComposer()}>
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-4 py-3 border-b border-border">
+            <DialogTitle className="text-base">Post yaratish</DialogTitle>
+          </DialogHeader>
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-3 mb-3">
+              <Avatar className="size-11"><AvatarImage src={profile?.avatar_url || undefined} /><AvatarFallback>{profile?.full_name?.[0]}</AvatarFallback></Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm truncate">{profile?.full_name}</div>
+                <Select value={postType} onValueChange={v => setPostType(v as any)}>
+                  <SelectTrigger className="h-7 text-xs w-fit gap-1.5 border-border bg-surface-2"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="update"><span className="inline-flex items-center gap-1.5"><Pencil className="size-3.5" /> Update</span></SelectItem>
+                    <SelectItem value="question"><span className="inline-flex items-center gap-1.5"><HelpCircle className="size-3.5" /> Savol</span></SelectItem>
+                    <SelectItem value="resource"><span className="inline-flex items-center gap-1.5"><BookOpen className="size-3.5" /> Resurs</span></SelectItem>
+                    <SelectItem value="win"><span className="inline-flex items-center gap-1.5"><Trophy className="size-3.5" /> Win</span></SelectItem>
+                    <SelectItem value="essay_tip"><span className="inline-flex items-center gap-1.5"><FileEdit className="size-3.5" /> Essay tip</span></SelectItem>
+                    <SelectItem value="poll"><span className="inline-flex items-center gap-1.5"><BarChart3 className="size-3.5" /> So'rovnoma</span></SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {postType === "poll" && (
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="So'rovnoma savoli..."
-                className="w-full bg-transparent border-0 focus:outline-none p-2 font-semibold text-base"
+                className="w-full bg-transparent border-0 focus:outline-none font-semibold text-base mb-2"
               />
             )}
-            <Textarea value={content} onChange={e => setContent(e.target.value)}
-              placeholder={postType === "poll" ? "Qo'shimcha tafsilot (ixtiyoriy)..." : "Share an update, tip, or question..."} rows={2}
-              className="bg-transparent border-0 resize-none focus-visible:ring-0 p-2" />
+            <Textarea
+              ref={taRef}
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              placeholder={postType === "poll" ? "Qo'shimcha tafsilot (ixtiyoriy)..." : "Nima ulashmoqchisiz?"}
+              rows={6}
+              className="bg-transparent border-0 resize-none focus-visible:ring-0 px-0 text-base placeholder:text-muted-foreground/70"
+            />
 
             {postType === "poll" && (
               <div className="space-y-2 mt-2 pt-2 border-t border-border">
@@ -126,9 +201,7 @@ function FeedPage() {
                   <div key={i} className="flex gap-2 items-center">
                     <input
                       value={opt}
-                      onChange={(e) => {
-                        const next = [...pollOptions]; next[i] = e.target.value; setPollOptions(next);
-                      }}
+                      onChange={(e) => { const next = [...pollOptions]; next[i] = e.target.value; setPollOptions(next); }}
                       placeholder={`Variant ${i + 1}`}
                       className="flex-1 bg-surface-2 rounded-md px-3 py-2 text-sm border border-border focus:outline-none focus:border-primary"
                     />
@@ -143,7 +216,6 @@ function FeedPage() {
               </div>
             )}
 
-            {/* Media previews */}
             {mediaFiles.length > 0 && (
               <div className={`mt-3 grid gap-2 ${mediaFiles.length > 1 ? "grid-cols-2" : ""}`}>
                 {mediaFiles.map((f, i) => (
@@ -157,32 +229,28 @@ function FeedPage() {
                 ))}
               </div>
             )}
-
-            {(content || postType === "poll" || mediaFiles.length > 0) && (
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
-                <Select value={postType} onValueChange={v => setPostType(v as any)}>
-                  <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="update"><span className="inline-flex items-center gap-1.5"><Pencil className="size-3.5" /> Update</span></SelectItem>
-                    <SelectItem value="question"><span className="inline-flex items-center gap-1.5"><HelpCircle className="size-3.5" /> Savol</span></SelectItem>
-                    <SelectItem value="resource"><span className="inline-flex items-center gap-1.5"><BookOpen className="size-3.5" /> Resurs</span></SelectItem>
-                    <SelectItem value="win"><span className="inline-flex items-center gap-1.5"><Trophy className="size-3.5" /> Win</span></SelectItem>
-                    <SelectItem value="essay_tip"><span className="inline-flex items-center gap-1.5"><FileEdit className="size-3.5" /> Essay tip</span></SelectItem>
-                    <SelectItem value="poll"><span className="inline-flex items-center gap-1.5"><BarChart3 className="size-3.5" /> So'rovnoma</span></SelectItem>
-                  </SelectContent>
-                </Select>
-                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }} />
-                <Button type="button" variant="ghost" size="sm" onClick={() => fileRef.current?.click()} disabled={mediaFiles.length >= 4}>
-                  <ImageIcon className="size-4 mr-1" /> <span className="hidden sm:inline">Rasm</span>
-                </Button>
-                <Button onClick={submitPost} disabled={posting || uploadingMedia} className="ml-auto bg-primary hover:bg-accent" size="sm">
-                  {posting || uploadingMedia ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4 mr-1.5" /> Post</>}
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
-      </div>
+
+          <div className="flex items-center gap-1 px-3 py-2 border-t border-border">
+            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }} />
+            <Button type="button" variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={mediaFiles.length >= 4} title="Rasm qo'shish">
+              <ImageIcon className="size-5 text-info" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon" onClick={() => setPostType("poll")} title="So'rovnoma">
+              <BarChart3 className="size-5 text-warning" />
+            </Button>
+            <Button
+              onClick={submitPost}
+              disabled={posting || uploadingMedia || (postType !== "poll" && !content.trim() && mediaFiles.length === 0)}
+              className="ml-auto bg-primary hover:bg-accent rounded-full px-5"
+              size="sm"
+            >
+              {posting || uploadingMedia ? <Loader2 className="size-4 animate-spin" /> : <><Send className="size-4 mr-1.5" /> Yuborish</>}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
 
       {loading ? <div className="text-center py-12 text-muted-foreground"><Loader2 className="size-6 animate-spin mx-auto" /></div>
