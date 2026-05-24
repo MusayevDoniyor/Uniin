@@ -227,7 +227,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
 
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link to="/profile/$id" params={{ id: post.profiles.id }} className="shrink-0">
+        <Link to="/profile/$id" params={{ id: post.profiles.username || post.profiles.id }} className="shrink-0">
           <Avatar className={`size-11 ${isGU ? "ring-2 ring-gold/40" : ""}`}>
             <AvatarImage src={post.profiles.avatar_url || undefined} />
             <AvatarFallback className="bg-surface-2">{post.profiles.full_name?.[0] || "U"}</AvatarFallback>
@@ -237,7 +237,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to="/profile/$id"
-              params={{ id: post.profiles.id }}
+              params={{ id: post.profiles.username || post.profiles.id }}
               className="font-semibold hover:underline truncate max-w-[180px]"
             >
               {post.profiles.full_name}
