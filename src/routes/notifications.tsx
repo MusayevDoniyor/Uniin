@@ -77,21 +77,27 @@ function Notifications() {
 function SwipeRow({ notif, onRead, onDelete }: { notif: Notif; onRead: () => void; onDelete: () => void }) {
   const [dx, setDx] = useState(0);
   const startX = useRef<number | null>(null);
-  const triggered = useRef(false);
+  const startY = useRef<number | null>(null);
+  const moved = useRef(false);
 
-  const onStart = (x: number) => { startX.current = x; triggered.current = false; };
-  const onMove = (x: number) => {
+  const onStart = (x: number, y = 0) => { startX.current = x; startY.current = y; moved.current = false; };
+  const onMove = (x: number, y = 0) => {
     if (startX.current === null) return;
     const delta = x - startX.current;
-    // clamp: swipe right (read) up to 120, left (delete) up to -120
-    setDx(Math.max(-140, Math.min(140, delta)));
+    const vertical = Math.abs(y - (startY.current ?? y));
+    if (Math.abs(delta) < 8 || vertical > Math.abs(delta)) return;
+    moved.current = true;
+    const max = typeof window !== "undefined" ? Math.min(128, window.innerWidth * 0.34) : 128;
+    setDx(Math.max(-max, Math.min(max, delta)));
   };
   const onEnd = () => {
     if (startX.current === null) return;
-    if (dx > 80 && !notif.read) { triggered.current = true; onRead(); }
-    else if (dx < -80) { triggered.current = true; onDelete(); }
+    if (dx > 56 && !notif.read) onRead();
+    else if (dx < -72) onDelete();
     setDx(0);
     startX.current = null;
+    startY.current = null;
+    setTimeout(() => { moved.current = false; }, 0);
   };
 
   return (
@@ -107,13 +113,17 @@ function SwipeRow({ notif, onRead, onDelete }: { notif: Notif; onRead: () => voi
       </div>
 
       <div
-        className={`surface-card p-4 select-none touch-pan-y ${!notif.read ? "border-primary/40 bg-primary/5" : ""}`}
+        className={`surface-card p-4 select-none touch-pan-y will-change-transform ${dx ? "cursor-grabbing" : "cursor-grab"} ${!notif.read ? "border-primary/40 bg-primary/5" : ""}`}
         style={{ transform: `translateX(${dx}px)`, transition: startX.current === null ? "transform 0.2s ease" : "none" }}
-        onTouchStart={(e) => onStart(e.touches[0].clientX)}
-        onTouchMove={(e) => onMove(e.touches[0].clientX)}
+        onTouchStart={(e) => onStart(e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchMove={(e) => {
+          const t = e.touches[0];
+          if (startX.current !== null && Math.abs(t.clientX - startX.current) > Math.abs(t.clientY - (startY.current ?? t.clientY))) e.preventDefault();
+          onMove(t.clientX, t.clientY);
+        }}
         onTouchEnd={onEnd}
-        onMouseDown={(e) => onStart(e.clientX)}
-        onMouseMove={(e) => { if (startX.current !== null) onMove(e.clientX); }}
+        onMouseDown={(e) => onStart(e.clientX, e.clientY)}
+        onMouseMove={(e) => { if (startX.current !== null) onMove(e.clientX, e.clientY); }}
         onMouseUp={onEnd}
         onMouseLeave={() => { if (startX.current !== null) onEnd(); }}
       >

@@ -53,7 +53,7 @@ function ProfilePage() {
       const { data: ps } = await supabase.from("posts")
         .select(`id, content, media_urls, post_type, likes_count, comments_count, created_at, author_id,
           profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major)`)
-        .eq("author_id", realId).order("created_at", { ascending: false });
+        .eq("author_id", realId).is("group_id", null).order("created_at", { ascending: false });
       setPosts(ps || []);
 
       if (user) {

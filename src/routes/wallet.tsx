@@ -78,37 +78,51 @@ function TopupForm({ onDone }: { onDone: () => void }) {
   const [amount, setAmount] = useState("10");
   const [provider, setProvider] = useState<"uzum" | "stripe">("uzum");
   const [busy, setBusy] = useState(false);
+  const quickAmounts = [5, 10, 25, 50];
 
   const submit = async () => {
     const a = Number(amount);
     if (!user || !a || a < 1) return toast.error("Minimum $1");
     setBusy(true);
-    const { error } = await supabase.from("wallet_topups").insert({ user_id: user.id, amount_usd: a, provider });
+    const { error } = await supabase.from("wallet_topups").insert({ user_id: user.id, amount_usd: a, provider, status: "completed" });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("To'ldirish so'rovi yuborildi");
+    toast.success("Hamyon qo'lda to'ldirildi");
     onDone();
   };
 
   return (
     <div className="surface-card p-5">
-      <div className="flex items-center gap-2 mb-3"><ArrowDownToLine className="size-4 text-success" /><h3 className="font-semibold">Hamyonni to'ldirish</h3></div>
+      <div className="flex items-center gap-2 mb-1"><ArrowDownToLine className="size-4 text-success" /><h3 className="font-semibold">Hamyonni qo'lda to'ldirish</h3></div>
+      <p className="text-xs text-muted-foreground mb-3">Payment ulanmaguncha summa darhol balansga qo'shiladi.</p>
       <div className="space-y-3">
         <div>
           <label className="text-xs text-muted-foreground">Miqdor (USD)</label>
           <Input type="number" min="1" step="1" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <div className="grid grid-cols-4 gap-2 mt-2">
+            {quickAmounts.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setAmount(String(value))}
+                className={`rounded-md border border-border px-2 py-1.5 text-xs font-semibold transition active:scale-95 ${amount === String(value) ? "bg-primary text-primary-foreground" : "bg-surface-2 hover:bg-surface"}`}
+              >
+                ${value}
+              </button>
+            ))}
+          </div>
         </div>
         <div>
-          <label className="text-xs text-muted-foreground">Provayder</label>
+          <label className="text-xs text-muted-foreground">Yo'l</label>
           <Select value={provider} onValueChange={(v) => setProvider(v as any)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="uzum">Uzum (Click/Payme/Uzcard)</SelectItem>
-              <SelectItem value="stripe">Stripe (xalqaro)</SelectItem>
+              <SelectItem value="uzum">Manual demo top-up</SelectItem>
+              <SelectItem value="stripe">Manual international</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={submit} disabled={busy} className="w-full">{busy ? <Loader2 className="size-4 animate-spin" /> : "To'ldirish"}</Button>
+        <Button onClick={submit} disabled={busy} className="w-full active:scale-[0.99] transition">{busy ? <Loader2 className="size-4 animate-spin" /> : "Balansga qo'shish"}</Button>
       </div>
     </div>
   );
