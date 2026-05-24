@@ -376,13 +376,13 @@ Count syncers (`update_post_likes_count`, `update_post_comments_count`, `update_
 
 ## 👥 Team Bitrix
 
-| Member                 | Role                           |
-| ---------------------- | ------------------------------ |
-| **Otabek Abduvaliyev** | Team Lead · Frontend Developer |
-| **Doniyor Musayev**    | Fullstack Developer            |
-| **Abdurahmon Ikromov** | Marketing                      |
-| **Azamov Azamat**      | Frontend Developer             |
-| **Bobojonov Sherzod**  | Designer                       |
+| Member                 | Role                                                           |
+| ---------------------- | -------------------------------------------------------------- |
+| **Otabek Abduvaliyev** | CEO, Front-end · Codevision LLC                                |
+| **Doniyor Musayev**    | CTO, Backend-end · Tashkent Start-Up Ambassadors Fullstack     |
+| **Abdurahmon Ikromov** | CMO, Marketing& Design · Roblox designing team                 |
+| **Azamov Azamat**      | Designer · Google Stitch, Medaa Tech                           |
+| **Bobojonov Sherzod**  | Admission advisor · Stipendium Hungaricum Holder              |
 
 Built at **Build with AI Ideathon 2026** — a joint initiative by **SQB (Sanoat Qurilish Bank)** and **New Uzbekistan University**.
 
