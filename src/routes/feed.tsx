@@ -69,7 +69,9 @@ function FeedPage() {
     const ch = supabase.channel("feed-posts")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, load)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const onOpen = () => openComposer("update");
+    window.addEventListener("uniin:open-composer", onOpen);
+    return () => { supabase.removeChannel(ch); window.removeEventListener("uniin:open-composer", onOpen); };
   }, []);
 
   const onPickFiles = (files: FileList | null) => {
