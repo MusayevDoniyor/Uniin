@@ -413,20 +413,23 @@ function AcademicStats({ form, update, prep }: any) {
           min={0} max={120} placeholder="105" suffix="/120"
           notTaken={form.toefl_na} onToggleNotTaken={v => update({ toefl_na: v })} />
       </div>
+
+      <CustomStatsEditor value={form.custom_stats} onChange={(v) => update({ custom_stats: v })} />
     </div>
   );
 }
 
-function SkillsExtras({ form, update, toggleArr, bioPrompt }: any) {
+function SkillsExtras({ form, update, bioPrompt }: any) {
   const [interest, setInterest] = useState("");
-  const [customEC, setCustomEC] = useState("");
-
-  const addCustomEC = () => {
-    const v = customEC.trim();
+  const toggleInterest = (val: string) => {
+    const arr: string[] = form.interests || [];
+    update({ interests: arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val] });
+  };
+  const addCustomInterest = () => {
+    const v = interest.trim();
     if (!v) return;
-    if ([...form.extracurriculars, ...form.extracurriculars_custom].includes(v)) { setCustomEC(""); return; }
-    update({ extracurriculars_custom: [...form.extracurriculars_custom, v] });
-    setCustomEC("");
+    if (!form.interests.includes(v)) update({ interests: [...form.interests, v] });
+    setInterest("");
   };
 
   return (
@@ -435,43 +438,39 @@ function SkillsExtras({ form, update, toggleArr, bioPrompt }: any) {
       <p className="text-sm text-muted-foreground">What makes you, you.</p>
 
       <div>
-        <Label>Extracurriculars</Label>
-        <div className="flex flex-wrap gap-2 mt-1.5">
-          {EXTRACURRICULARS.map((ec: string) => (
-            <button key={ec} onClick={() => toggleArr("extracurriculars", ec)} type="button"
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${form.extracurriculars.includes(ec) ? "bg-primary border-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}>{ec}</button>
-          ))}
-          {form.extracurriculars_custom.map((ec: string, i: number) => (
-            <span key={`c-${i}`} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-info/15 text-info border border-info/30">
-              {ec}
-              <button type="button" onClick={() => update({ extracurriculars_custom: form.extracurriculars_custom.filter((_: string, j: number) => j !== i) })}><X className="size-3" /></button>
-            </span>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-3">
-          <Input value={customEC} onChange={e => setCustomEC(e.target.value)} maxLength={40}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustomEC(); } }}
-            placeholder="Other: add your own (e.g. Robotics club)" />
-          <Button type="button" variant="outline" onClick={addCustomEC}><Plus className="size-4" /></Button>
-        </div>
+        <Label>Extracurriculars — o'zingiz qilgan ishlaringizni yuklang</Label>
+        <p className="text-xs text-muted-foreground mt-1 mb-3">Kategoriya bo'yicha tartibga solinadi. Har biriga tafsilot, havola yoki fayl qo'shsangiz bo'ladi.</p>
+        <ExtracurricularUploader value={form.extracurricular_items} onChange={(v: ECItem[]) => update({ extracurricular_items: v })} />
       </div>
 
       <div>
-        <Label>Interests & skills (Enter to add)</Label>
-        <div className="flex gap-2 mt-1.5">
-          <Input value={interest} maxLength={30} onChange={e => setInterest(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (interest.trim()) { update({ interests: [...form.interests, interest.trim()] }); setInterest(""); } } }}
-            placeholder="e.g. Machine learning" />
-          <Button type="button" variant="outline" onClick={() => { if (interest.trim()) { update({ interests: [...form.interests, interest.trim()] }); setInterest(""); } }}>Add</Button>
-        </div>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {form.interests.map((i: string, idx: number) => (
-            <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info text-xs">
-              {i} <button onClick={() => update({ interests: form.interests.filter((_: any, j: number) => j !== idx) })}><X className="size-3" /></button>
-            </span>
+        <Label>Interests & skills</Label>
+        <p className="text-xs text-muted-foreground mt-1">Tugmalarni bosib tanlang yoki o'zingiznikini qo'shing.</p>
+        <div className="flex flex-wrap gap-1.5 mt-2 max-h-48 overflow-y-auto">
+          {INTEREST_PRESETS.map((it) => (
+            <button key={it} type="button" onClick={() => toggleInterest(it)}
+              className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${form.interests.includes(it) ? "bg-info border-info text-white" : "border-border hover:border-info/50"}`}>
+              {it}
+            </button>
           ))}
         </div>
+        <div className="flex gap-2 mt-3">
+          <Input value={interest} maxLength={30} onChange={e => setInterest(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustomInterest(); } }}
+            placeholder="Boshqa qiziqishingiz" />
+          <Button type="button" variant="outline" onClick={addCustomInterest}><Plus className="size-4" /></Button>
+        </div>
+        {form.interests.filter((i: string) => !INTEREST_PRESETS.includes(i)).length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {form.interests.filter((i: string) => !INTEREST_PRESETS.includes(i)).map((i: string, idx: number) => (
+              <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info text-xs">
+                {i} <button onClick={() => update({ interests: form.interests.filter((x: string) => x !== i) })}><X className="size-3" /></button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <WordCountTextarea
         label="Short bio"
