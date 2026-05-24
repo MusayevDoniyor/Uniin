@@ -70,13 +70,13 @@ export function GlobalSearch() {
     if (c === "all" || c === "people") {
       tasks.push((async () => {
         const { data } = await supabase.from("profiles")
-          .select("id, full_name, avatar_url, user_type, school_name, intended_major")
-          .or(`full_name.ilike.${like},school_name.ilike.${like},intended_major.ilike.${like}`)
+          .select("id, username, full_name, avatar_url, user_type, school_name, intended_major")
+          .or(`full_name.ilike.${like},username.ilike.${like},school_name.ilike.${like},intended_major.ilike.${like}`)
           .limit(c === "people" ? 20 : 5);
         (data || []).forEach((p: any) => out.push({
           id: p.id, type: "people", title: p.full_name || "User",
-          subtitle: [p.user_type?.toUpperCase(), p.school_name, p.intended_major].filter(Boolean).join(" · "),
-          avatar: p.avatar_url, to: "/profile/$id", params: { id: p.id },
+          subtitle: [p.username ? `@${p.username}` : null, p.user_type?.toUpperCase(), p.school_name, p.intended_major].filter(Boolean).join(" · "),
+          avatar: p.avatar_url, to: "/profile/$id", params: { id: p.username || p.id },
         }));
       })());
     }
