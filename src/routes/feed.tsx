@@ -217,7 +217,7 @@ function RightSidebar() {
         <h3 className="font-semibold text-sm mb-3">People you might know</h3>
         <div className="space-y-3">
           {people.map(p => (
-            <Link key={p.id} to="/profile/$id" params={{ id: p.id }} className="flex items-center gap-3 hover:bg-surface-2 -mx-2 px-2 py-1.5 rounded">
+            <Link key={p.id} to="/profile/$id" params={{ id: p.username || p.id }} className="flex items-center gap-3 hover:bg-surface-2 -mx-2 px-2 py-1.5 rounded">
               <Avatar className="size-9"><AvatarImage src={p.avatar_url} /><AvatarFallback>{p.full_name?.[0]}</AvatarFallback></Avatar>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate flex items-center gap-1.5">{p.full_name} <UserBadge type={p.user_type} className="!text-[10px]" /></div>
