@@ -109,6 +109,9 @@ function Marketplace() {
 
   const buy = async (l: any) => {
     if (!user) return;
+    if (profile && l.seller_id === profile.id) {
+      return toast.error("O'zingizning listingingizni sotib ololmaysiz.");
+    }
     if (l.is_free) {
       await supabase.from("listing_purchases").insert({ listing_id: l.id, buyer_id: user.id, amount_usd: 0, status: "completed" as any });
       toast.success("Unlocked! Check Wallet for receipt.");
