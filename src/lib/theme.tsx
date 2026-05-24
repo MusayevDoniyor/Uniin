@@ -7,7 +7,7 @@ type Ctx = { theme: Theme; resolved: Resolved; setTheme: (t: Theme) => void; tog
 const ThemeCtx = createContext<Ctx | null>(null);
 
 function getSystem(): Resolved {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
@@ -19,11 +19,11 @@ function apply(resolved: Resolved) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [resolved, setResolved] = useState<Resolved>("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [resolved, setResolved] = useState<Resolved>("light");
 
   useEffect(() => {
-    const saved = (typeof window !== "undefined" && (localStorage.getItem("uniin-theme") as Theme)) || "system";
+    const saved = (typeof window !== "undefined" && (localStorage.getItem("uniin-theme") as Theme)) || "light";
     setThemeState(saved);
   }, []);
 
@@ -49,6 +49,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
 export function useTheme() {
   const c = useContext(ThemeCtx);
-  if (!c) return { theme: "dark" as Theme, resolved: "dark" as Resolved, setTheme: () => {}, toggle: () => {} };
+  if (!c) return { theme: "light" as Theme, resolved: "light" as Resolved, setTheme: () => {}, toggle: () => {} };
   return c;
 }
