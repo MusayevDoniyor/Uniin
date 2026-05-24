@@ -405,86 +405,68 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
               Hali izoh yo'q. Birinchi bo'lib yozing 👇
             </div>
           )}
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-2 group">
-              <Link to="/profile/$id" params={{ id: c.profiles?.id }} className="shrink-0">
-                <Avatar className="size-8">
-                  <AvatarImage src={c.profiles?.avatar_url} />
-                  <AvatarFallback className="text-xs">{c.profiles?.full_name?.[0]}</AvatarFallback>
-                </Avatar>
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="bg-surface-2 rounded-2xl px-3 py-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Link
-                      to="/profile/$id"
-                      params={{ id: c.profiles?.id }}
-                      className="text-xs font-semibold hover:underline"
-                    >
-                      {c.profiles?.full_name}
-                    </Link>
-                    {c.profiles?.user_type === "gu" && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
-                        G.U.
-                      </span>
-                    )}
+          {topLevelComments.map((c) => {
+            const replies = repliesByParent[c.id] || [];
+            return (
+              <div key={c.id} className="space-y-2">
+                <CommentItem
+                  c={c}
+                  liked={!!likedComments[c.id]}
+                  onLike={() => toggleCommentLike(c.id)}
+                  onReply={() => replyToComment(c.id, c.profiles?.full_name?.split(" ")[0])}
+                />
+                {replies.length > 0 && (
+                  <div className="ml-10 space-y-2 border-l border-border pl-3">
+                    {replies.map((r) => (
+                      <CommentItem
+                        key={r.id}
+                        c={r}
+                        small
+                        liked={!!likedComments[r.id]}
+                        onLike={() => toggleCommentLike(r.id)}
+                        onReply={() => replyToComment(c.id, r.profiles?.full_name?.split(" ")[0])}
+                      />
+                    ))}
                   </div>
-                  <div className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.content}</div>
-                </div>
-                <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
-                  <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
-                  <button
-                    onClick={() => toggleCommentLike(c.id)}
-                    className={`hover:text-foreground font-medium ${likedComments[c.id] ? "text-primary" : ""}`}
-                  >
-                    Like
-                  </button>
-                  <button
-                    onClick={() => replyToComment(c.profiles?.full_name?.split(" ")[0])}
-                    className="hover:text-foreground font-medium"
-                  >
-                    Reply
-                  </button>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Composer */}
           {user && (
-            <div className="flex gap-2 items-center pt-1">
-              <div className="flex-1 relative flex items-center">
-                <textarea
-                  ref={inputRef}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      postComment();
-                    }
-                  }}
-                  rows={1}
-                  placeholder="Izoh yozing..."
-                  className="w-full bg-surface-2 rounded-full pl-4 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none leading-5 max-h-32"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                  aria-label="Emoji"
-                >
-                  <Smile size={16} />
+            <div className="pt-1">
+              {replyTo && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground bg-surface-2 rounded-md px-2 py-1 mb-1.5">
+                  <span>Javob: <span className="font-medium text-foreground">@{replyTo.name}</span></span>
+                  <button onClick={() => { setReplyTo(null); setNewComment(""); }} className="hover:text-foreground">✕</button>
+                </div>
+              )}
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative flex items-center">
+                  <textarea
+                    ref={inputRef}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        postComment();
+                      }
+                    }}
+                    rows={1}
+                    placeholder={replyTo ? `Reply to @${replyTo.name}...` : "Izoh yozing..."}
+                    className="w-full bg-surface-2 rounded-full pl-4 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none leading-5 max-h-32"
+                  />
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} aria-label="Emoji">
+                    <Smile size={16} />
+                  </button>
+                </div>
+                <button onClick={postComment} disabled={!newComment.trim() || posting}
+                  className="size-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition-opacity" aria-label="Send">
+                  <Send size={15} />
                 </button>
               </div>
-              <button
-                onClick={postComment}
-                disabled={!newComment.trim() || posting}
-                className="size-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition-opacity"
-                aria-label="Send"
-              >
-                <Send size={15} />
-              </button>
             </div>
           )}
         </div>
