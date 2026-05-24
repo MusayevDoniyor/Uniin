@@ -214,7 +214,7 @@ function PersonalInfo({ form, update, onAvatarChange, showGradeYear }: any) {
       <h2 className="text-2xl font-bold">Personal info</h2>
       <p className="text-sm text-muted-foreground">Tell us about yourself.</p>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="size-20 rounded-full bg-surface-2 flex items-center justify-center overflow-hidden border-2 border-border">
           {form.avatar_url ? <img src={form.avatar_url} alt="avatar" className="size-full object-cover" />
             : <Upload className="size-6 text-muted-foreground" />}
@@ -223,11 +223,27 @@ function PersonalInfo({ form, update, onAvatarChange, showGradeYear }: any) {
           <span className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-surface-2 text-sm hover:bg-surface">Upload photo</span>
           <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
         </Label>
+        <AvatarPicker onPick={(url) => update({ avatar_url: url })} />
       </div>
 
       <div>
         <Label>Full name</Label>
         <Input value={form.full_name} maxLength={80} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <Label>Gender</Label>
+          <Select value={form.gender} onValueChange={v => update({ gender: v })}>
+            <SelectTrigger className="mt-1.5"><SelectValue placeholder="Tanlang" /></SelectTrigger>
+            <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Tug'ilgan sana</Label>
+          <Input type="date" max={new Date().toISOString().split("T")[0]}
+            value={form.date_of_birth} onChange={e => update({ date_of_birth: e.target.value })} className="mt-1.5" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
