@@ -181,6 +181,9 @@ function ProfilePage() {
                 <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{profile.full_name}</h1>
                 <UserBadge type={profile.user_type} />
               </div>
+              {profile.username && (
+                <div className="text-sm text-muted-foreground mt-0.5 font-mono">@{profile.username}</div>
+              )}
               {isGU && primaryUni && (
                 <div className="mt-1.5 inline-flex items-center gap-2 text-sm md:text-base font-medium text-gold">
                   <GraduationCap className="size-4 shrink-0" /> {primaryUni.university_name} · {primaryUni.major || primaryUni.degree_type}
