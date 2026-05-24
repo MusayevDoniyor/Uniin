@@ -16,7 +16,11 @@ import { CertificateEditor, type Certification } from "@/components/CertificateE
 import { UZ_CITIES } from "@/lib/data/uzbekistan";
 import { toast } from "sonner";
 import { Loader2, Upload, X, Plus, Search } from "lucide-react";
-import { COUNTRIES, MAJORS, EXTRACURRICULARS, UNIVERSITIES } from "@/lib/data/universities";
+import { COUNTRIES, MAJORS, UNIVERSITIES } from "@/lib/data/universities";
+import { INTEREST_PRESETS, GENDER_OPTIONS } from "@/lib/data/presets";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { CustomStatsEditor, type CustomStat } from "@/components/CustomStatsEditor";
+import { ExtracurricularUploader, type ECItem } from "@/components/ExtracurricularUploader";
 
 export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
@@ -24,13 +28,15 @@ export const Route = createFileRoute("/onboarding")({
 
 type Form = {
   full_name: string; avatar_url: string; city: string; phone: string;
+  gender: string; date_of_birth: string;
   grade: string; target_year: number | null;
   gpa: string; gpa_scale: number; gpa_na: boolean;
   sat: string; sat_na: boolean;
   ielts: string; ielts_na: boolean;
   toefl: string; toefl_na: boolean;
+  custom_stats: CustomStat[];
   school_name: string;
-  extracurriculars: string[]; extracurriculars_custom: string[];
+  extracurricular_items: ECItem[];
   interests: string[]; bio: string; certifications: Certification[];
   target_countries: string[]; dream_universities: string[]; intended_major: string;
   gu_unis: { university_name: string; country: string; qs_rank: number; year_admitted: number | null; degree_type: string; major: string }[];
@@ -43,13 +49,15 @@ function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<Form>({
     full_name: profile?.full_name || "", avatar_url: "", city: "", phone: "",
+    gender: "", date_of_birth: "",
     grade: "", target_year: null,
     gpa: "", gpa_scale: 4.0, gpa_na: false,
     sat: "", sat_na: false,
     ielts: "", ielts_na: false,
     toefl: "", toefl_na: false,
+    custom_stats: [],
     school_name: "",
-    extracurriculars: [], extracurriculars_custom: [],
+    extracurricular_items: [],
     interests: [], bio: "", certifications: [],
     target_countries: [], dream_universities: [], intended_major: "",
     gu_unis: [],
@@ -94,15 +102,18 @@ function OnboardingPage() {
   const finish = async () => {
     if (form.phone && !isValidUzPhone(form.phone)) return toast.error("Please enter a valid Uzbek phone number");
     setSubmitting(true);
-    const allExtras = [...form.extracurriculars, ...form.extracurriculars_custom];
     const { error } = await supabase.from("profiles").update({
       full_name: form.full_name, avatar_url: form.avatar_url || null, city: form.city, phone: form.phone,
+      gender: form.gender || null, date_of_birth: form.date_of_birth || null,
       grade: form.grade || null, target_year: form.target_year,
       gpa: form.gpa_na || !form.gpa ? null : parseFloat(form.gpa), gpa_scale: form.gpa_scale,
       sat: form.sat_na || !form.sat ? null : parseInt(form.sat),
       ielts: form.ielts_na || !form.ielts ? null : parseFloat(form.ielts),
       toefl: form.toefl_na || !form.toefl ? null : parseInt(form.toefl),
-      school_name: form.school_name, extracurriculars: allExtras,
+      custom_stats: form.custom_stats as any,
+      school_name: form.school_name,
+      extracurricular_items: form.extracurricular_items as any,
+      extracurriculars: form.extracurricular_items.map(e => e.title),
       interests: form.interests, bio: form.bio,
       certifications: form.certifications as any,
       target_countries: form.target_countries, dream_universities: form.dream_universities,
@@ -174,7 +185,7 @@ function computeRank(f: Form, isGU: boolean): number {
   if (f.gpa && !f.gpa_na) score += parseFloat(f.gpa) / f.gpa_scale * 30;
   if (f.sat && !f.sat_na) score += (parseInt(f.sat) / 1600) * 30;
   if (f.ielts && !f.ielts_na) score += (parseFloat(f.ielts) / 9) * 20;
-  score += (f.extracurriculars.length + f.extracurriculars_custom.length) * 3;
+  score += f.extracurricular_items.length * 3;
   return Math.round(score);
 }
 
