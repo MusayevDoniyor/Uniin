@@ -64,7 +64,13 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
           {value.map((c, i) => (
             <div key={i} className="surface-card p-3 flex items-start gap-3">
               {c.image_url ? (
-                <img src={c.image_url} alt={c.name} className="size-12 rounded-md object-cover shrink-0" />
+                isPdf(c.image_url) ? (
+                  <a href={c.image_url} target="_blank" rel="noreferrer" className="size-12 rounded-md bg-destructive/10 text-destructive flex items-center justify-center shrink-0" title="PDFni ko'rish">
+                    <FileText className="size-5" />
+                  </a>
+                ) : (
+                  <img src={c.image_url} alt={c.name} className="size-12 rounded-md object-cover shrink-0" />
+                )
               ) : (
                 <div className="size-12 rounded-md bg-gold/15 text-gold flex items-center justify-center shrink-0">
                   <Award className="size-5" />
@@ -101,11 +107,30 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
               <Input value={draft.name} maxLength={80} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="IELTS Academic" className="mt-1" />
             </div>
             <div>
+              <Label className="text-xs">Name *</Label>
+              {nameMode === "preset" ? (
+                <Select value={draft.name} onValueChange={(v) => { if (v === "__custom__") { setNameMode("custom"); setDraft(d => ({ ...d, name: "" })); } else { setDraft(d => ({ ...d, name: v })); } }}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Sertifikat turini tanlang" /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {CERTIFICATE_PRESETS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    <SelectItem value="__custom__">+ Boshqa (o'zim yozaman)</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex gap-2 mt-1">
+                  <Input value={draft.name} maxLength={80} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="Sertifikat nomi" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setNameMode("preset")}>Ro'yxatdan</Button>
+                </div>
+              )}
+            </div>
+            <div>
               <Label className="text-xs">Issuing organization *</Label>
               <Input value={draft.issuer} maxLength={80} onChange={e => setDraft(d => ({ ...d, issuer: e.target.value }))} placeholder="British Council" className="mt-1" />
             </div>
             <div>
               <Label className="text-xs">Issue date</Label>
+              <Input type="month" value={draft.issue_date} onChange={e => setDraft(d => ({ ...d, issue_date: e.target.value }))} className="mt-1" />
+            </div>
               <Input type="month" value={draft.issue_date} onChange={e => setDraft(d => ({ ...d, issue_date: e.target.value }))} className="mt-1" />
             </div>
             <div>
