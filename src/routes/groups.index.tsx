@@ -76,7 +76,7 @@ function Groups() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Groups</h1>
+        <h1 className="text-2xl font-bold">Guruhlar</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button className="bg-primary hover:bg-accent rounded-full"><Plus className="size-4 mr-1.5" />Guruh yaratish</Button></DialogTrigger>
           <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
