@@ -230,7 +230,7 @@ function ProfilePage() {
                   ) : (
                     <div className="space-y-2">
                       {views.recent.map((v: any, i: number) => (
-                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
+                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.username || v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
                           <Avatar className="size-9"><AvatarImage src={v.profiles?.avatar_url} /><AvatarFallback>{v.profiles?.full_name?.[0]}</AvatarFallback></Avatar>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate flex items-center gap-1.5">{v.profiles?.full_name} <UserBadge type={v.profiles?.user_type} className="!text-[9px]" /></div>
