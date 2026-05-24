@@ -50,6 +50,7 @@ function FeedPage() {
     const { data } = await supabase.from("posts")
       .select(`id, content, title, media_urls, post_type, poll_options, likes_count, comments_count, created_at, author_id,
         profiles!posts_author_id_fkey(id, username, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
+      .is("group_id", null)
       .order("created_at", { ascending: false }).limit(50);
 
     // Enrich GU users with primary university
