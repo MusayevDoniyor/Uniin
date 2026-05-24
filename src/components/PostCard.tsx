@@ -512,3 +512,44 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
 
   );
 }
+
+function CommentItem({
+  c, liked, small, onLike, onReply,
+}: {
+  c: any; liked: boolean; small?: boolean; onLike: () => void; onReply: () => void;
+}) {
+  const handle = c.profiles?.username || c.profiles?.id;
+  return (
+    <div className="flex gap-2 group">
+      <Link to="/profile/$id" params={{ id: handle }} className="shrink-0">
+        <Avatar className={small ? "size-7" : "size-8"}>
+          <AvatarImage src={c.profiles?.avatar_url} />
+          <AvatarFallback className="text-xs">{c.profiles?.full_name?.[0]}</AvatarFallback>
+        </Avatar>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <div className="bg-surface-2 rounded-2xl px-3 py-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link to="/profile/$id" params={{ id: handle }} className="text-xs font-semibold hover:underline">
+              {c.profiles?.full_name}
+            </Link>
+            {c.profiles?.username && (
+              <span className="text-[10px] text-muted-foreground">@{c.profiles.username}</span>
+            )}
+            {c.profiles?.user_type === "gu" && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
+                G.U.
+              </span>
+            )}
+          </div>
+          <div className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.content}</div>
+        </div>
+        <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
+          <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
+          <button onClick={onLike} className={`hover:text-foreground font-medium ${liked ? "text-primary" : ""}`}>Like</button>
+          <button onClick={onReply} className="hover:text-foreground font-medium">Reply</button>
+        </div>
+      </div>
+    </div>
+  );
+}
