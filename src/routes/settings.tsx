@@ -111,6 +111,7 @@ function Settings() {
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
       full_name: f.full_name,
+      username: f.username ? f.username.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-+|-+$)/g, "") : null,
       avatar_url: f.avatar_url || null,
       cover_image_url: f.cover_image_url || null,
       city: f.city, phone: f.phone, school_name: f.school_name, bio: f.bio,
