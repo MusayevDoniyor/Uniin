@@ -32,6 +32,7 @@ function FeedPage() {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [feedTab, setFeedTab] = useState<"foryou" | "following">("foryou");
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
