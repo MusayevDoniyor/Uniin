@@ -299,6 +299,7 @@ export type Database = {
           is_private: boolean | null
           member_count: number | null
           name: string
+          slug: string | null
         }
         Insert: {
           category?: string | null
@@ -310,6 +311,7 @@ export type Database = {
           is_private?: boolean | null
           member_count?: number | null
           name: string
+          slug?: string | null
         }
         Update: {
           category?: string | null
@@ -321,6 +323,7 @@ export type Database = {
           is_private?: boolean | null
           member_count?: number | null
           name?: string
+          slug?: string | null
         }
         Relationships: []
       }
@@ -602,6 +605,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          parent_id: string | null
           post_id: string
         }
         Insert: {
@@ -609,6 +613,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          parent_id?: string | null
           post_id: string
         }
         Update: {
@@ -616,6 +621,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          parent_id?: string | null
           post_id?: string
         }
         Relationships: [
@@ -624,6 +630,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
             referencedColumns: ["id"]
           },
           {
@@ -800,6 +813,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           user_type: Database["public"]["Enums"]["user_type"] | null
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -838,6 +852,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -876,6 +891,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           user_type?: Database["public"]["Enums"]["user_type"] | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -1078,7 +1094,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_unique_group_slug: { Args: { base: string }; Returns: string }
+      generate_unique_username: { Args: { base: string }; Returns: string }
+      slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
       ai_mode: "university_match" | "profile_analyzer" | "essay_coach"

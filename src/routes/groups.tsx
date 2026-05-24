@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Users, Plus, Check } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -94,14 +94,18 @@ function Groups() {
         {groups.map(g => {
           const joined = myMemberships.has(g.id);
           const isCreator = g.creator_id === user?.id;
+          const groupHref = g.slug || g.id;
           return (
             <div key={g.id} className="surface-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div className="font-semibold">{g.name}</div>
-                {isCreator && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gold/15 text-gold uppercase">Owner</span>}
-              </div>
-              {g.category && <div className="text-xs text-info mt-0.5">{g.category}</div>}
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{g.description}</p>
+              <Link to="/groups/$slug" params={{ slug: groupHref }} className="block">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-semibold hover:underline">{g.name}</div>
+                  {isCreator && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gold/15 text-gold uppercase">Owner</span>}
+                </div>
+                {g.category && <div className="text-xs text-info mt-0.5">{g.category}</div>}
+                {g.slug && <div className="text-[10px] text-muted-foreground font-mono mt-0.5">/{g.slug}</div>}
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{g.description}</p>
+              </Link>
               <div className="flex items-center justify-between mt-3">
                 <span className="text-xs text-muted-foreground flex items-center gap-1"><Users className="size-3" />{g.member_count} members</span>
                 {isCreator ? (

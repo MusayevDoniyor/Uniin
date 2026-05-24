@@ -75,7 +75,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
           })}
         </nav>
 
-        <button onClick={() => navigate({ to: "/profile/$id", params: { id: profile?.id || "" } })}
+        <button onClick={() => navigate({ to: "/profile/$id", params: { id: (profile as any)?.username || profile?.id || "" } })}
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors mt-2">
           <Avatar className="size-9">
             <AvatarImage src={profile?.avatar_url || undefined} />
@@ -127,7 +127,7 @@ export function AppShell({ children, rightSidebar }: { children: React.ReactNode
             </Link>
           );
         })}
-        <Link to="/profile/$id" params={{ id: profile?.id || "" }} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${loc.pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground"}`}>
+        <Link to="/profile/$id" params={{ id: (profile as any)?.username || profile?.id || "" }} className={`flex flex-col items-center gap-0.5 px-3 py-1 ${loc.pathname.startsWith("/profile") ? "text-primary" : "text-muted-foreground"}`}>
           <User className="size-5" /><span className="text-[10px]">Me</span>
         </Link>
       </nav>

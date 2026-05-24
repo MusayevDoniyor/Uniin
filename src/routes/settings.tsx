@@ -40,6 +40,7 @@ function Settings() {
     if (profile) {
       setF({
         full_name: profile.full_name || "",
+        username: (profile as any).username || "",
         avatar_url: profile.avatar_url || "",
         cover_image_url: (profile as any).cover_image_url || "",
         city: profile.city || "",
@@ -110,6 +111,7 @@ function Settings() {
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
       full_name: f.full_name,
+      username: f.username ? f.username.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-+|-+$)/g, "") : null,
       avatar_url: f.avatar_url || null,
       cover_image_url: f.cover_image_url || null,
       city: f.city, phone: f.phone, school_name: f.school_name, bio: f.bio,
@@ -201,6 +203,16 @@ function Settings() {
           <Section title="Basic info">
             <div className="space-y-3">
               <div><Label>Full name</Label><Input maxLength={80} value={f.full_name} onChange={e => update({ full_name: e.target.value })} className="mt-1.5" /></div>
+              <div>
+                <Label>Username <span className="text-xs text-muted-foreground font-normal">(profil havolasi: /profile/@{f.username || "—"})</span></Label>
+                <Input
+                  maxLength={30}
+                  value={f.username}
+                  onChange={e => update({ username: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                  placeholder="masalan: doniyor-musayev"
+                  className="mt-1.5 font-mono"
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label>Region</Label>

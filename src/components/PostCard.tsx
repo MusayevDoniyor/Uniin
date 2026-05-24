@@ -32,7 +32,7 @@ type PostWithAuthor = {
   poll_options?: string[] | null;
   likes_count: number; comments_count: number; created_at: string; author_id: string;
   profiles: {
-    id: string; full_name: string; avatar_url: string | null;
+    id: string; username?: string | null; full_name: string; avatar_url: string | null;
     user_type: "gu" | "prep";
     intended_major: string | null;
     grade?: string | null;
@@ -157,8 +157,11 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
   const toggleCommentLike = (id: string) =>
     setLikedComments((s) => ({ ...s, [id]: !s[id] }));
 
-  const replyToComment = (name?: string) => {
-    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} ${v}`));
+  // Reply state — which comment id we're currently replying to
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
+  const replyToComment = (commentId: string, name?: string) => {
+    setReplyTo({ id: commentId, name: name || "" });
+    if (name) setNewComment((v) => (v.startsWith(`@${name}`) ? v : `@${name} `));
     setTimeout(() => inputRef.current?.focus(), 30);
   };
 
@@ -169,9 +172,8 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "post_comments", filter: `post_id=eq.${post.id}` },
         async (payload: any) => {
-          // Fetch profile for the new comment
           const { data: p } = await supabase.from("profiles")
-            .select("id, full_name, avatar_url, user_type")
+            .select("id, username, full_name, avatar_url, user_type")
             .eq("id", payload.new.author_id).maybeSingle();
           setComments((cs) => {
             if (cs.some((c) => c.id === payload.new.id)) return cs;
@@ -190,7 +192,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
     if (next && comments.length === 0) {
       setCommentsLoading(true);
       const { data } = await supabase.from("post_comments")
-        .select("id, content, created_at, author_id, profiles!post_comments_author_id_fkey(id, full_name, avatar_url, user_type)")
+        .select("id, content, created_at, author_id, parent_id, profiles!post_comments_author_id_fkey(id, username, full_name, avatar_url, user_type)")
         .eq("post_id", post.id).order("created_at", { ascending: true });
       setComments(data || []);
       setCommentsLoading(false);
@@ -202,19 +204,30 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
     const text = newComment.trim();
     if (!text || !user || posting) return;
     setPosting(true);
-    const { data: profile } = await supabase.from("profiles").select("id, full_name, avatar_url, user_type").eq("user_id", user.id).single();
+    const { data: profile } = await supabase.from("profiles").select("id, username, full_name, avatar_url, user_type").eq("user_id", user.id).single();
     if (!profile) { setPosting(false); return; }
+    const insertData: any = { post_id: post.id, author_id: profile.id, content: text };
+    if (replyTo) insertData.parent_id = replyTo.id;
     const { data } = await supabase.from("post_comments")
-      .insert({ post_id: post.id, author_id: profile.id, content: text })
-      .select("id, content, created_at, author_id, profiles!post_comments_author_id_fkey(id, full_name, avatar_url, user_type)").single();
+      .insert(insertData)
+      .select("id, content, created_at, author_id, parent_id, profiles!post_comments_author_id_fkey(id, username, full_name, avatar_url, user_type)").single();
     if (data) {
       setComments((c) => c.some((x) => x.id === data.id) ? c : [...c, data]);
       setCommentCount((n) => n + 1);
     }
     setNewComment("");
+    setReplyTo(null);
     setPosting(false);
     inputRef.current?.focus();
   };
+
+  // Group comments by parent for nested rendering
+  const topLevelComments = useMemo(() => comments.filter((c) => !c.parent_id), [comments]);
+  const repliesByParent = useMemo(() => {
+    const m: Record<string, any[]> = {};
+    comments.forEach((c) => { if (c.parent_id) (m[c.parent_id] ||= []).push(c); });
+    return m;
+  }, [comments]);
 
   const chips = useMemo(() => extractScoreChips(post.content), [post.content]);
   const targetFlags = !isGU ? countriesToFlags(post.profiles.target_countries) : "";
@@ -227,7 +240,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
 
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Link to="/profile/$id" params={{ id: post.profiles.id }} className="shrink-0">
+        <Link to="/profile/$id" params={{ id: post.profiles.username || post.profiles.id }} className="shrink-0">
           <Avatar className={`size-11 ${isGU ? "ring-2 ring-gold/40" : ""}`}>
             <AvatarImage src={post.profiles.avatar_url || undefined} />
             <AvatarFallback className="bg-surface-2">{post.profiles.full_name?.[0] || "U"}</AvatarFallback>
@@ -237,7 +250,7 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to="/profile/$id"
-              params={{ id: post.profiles.id }}
+              params={{ id: post.profiles.username || post.profiles.id }}
               className="font-semibold hover:underline truncate max-w-[180px]"
             >
               {post.profiles.full_name}
@@ -392,86 +405,68 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
               Hali izoh yo'q. Birinchi bo'lib yozing 👇
             </div>
           )}
-          {comments.map((c) => (
-            <div key={c.id} className="flex gap-2 group">
-              <Link to="/profile/$id" params={{ id: c.profiles?.id }} className="shrink-0">
-                <Avatar className="size-8">
-                  <AvatarImage src={c.profiles?.avatar_url} />
-                  <AvatarFallback className="text-xs">{c.profiles?.full_name?.[0]}</AvatarFallback>
-                </Avatar>
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="bg-surface-2 rounded-2xl px-3 py-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Link
-                      to="/profile/$id"
-                      params={{ id: c.profiles?.id }}
-                      className="text-xs font-semibold hover:underline"
-                    >
-                      {c.profiles?.full_name}
-                    </Link>
-                    {c.profiles?.user_type === "gu" && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
-                        G.U.
-                      </span>
-                    )}
+          {topLevelComments.map((c) => {
+            const replies = repliesByParent[c.id] || [];
+            return (
+              <div key={c.id} className="space-y-2">
+                <CommentItem
+                  c={c}
+                  liked={!!likedComments[c.id]}
+                  onLike={() => toggleCommentLike(c.id)}
+                  onReply={() => replyToComment(c.id, c.profiles?.full_name?.split(" ")[0])}
+                />
+                {replies.length > 0 && (
+                  <div className="ml-10 space-y-2 border-l border-border pl-3">
+                    {replies.map((r) => (
+                      <CommentItem
+                        key={r.id}
+                        c={r}
+                        small
+                        liked={!!likedComments[r.id]}
+                        onLike={() => toggleCommentLike(r.id)}
+                        onReply={() => replyToComment(c.id, r.profiles?.full_name?.split(" ")[0])}
+                      />
+                    ))}
                   </div>
-                  <div className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.content}</div>
-                </div>
-                <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
-                  <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
-                  <button
-                    onClick={() => toggleCommentLike(c.id)}
-                    className={`hover:text-foreground font-medium ${likedComments[c.id] ? "text-primary" : ""}`}
-                  >
-                    Like
-                  </button>
-                  <button
-                    onClick={() => replyToComment(c.profiles?.full_name?.split(" ")[0])}
-                    className="hover:text-foreground font-medium"
-                  >
-                    Reply
-                  </button>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Composer */}
           {user && (
-            <div className="flex gap-2 items-center pt-1">
-              <div className="flex-1 relative flex items-center">
-                <textarea
-                  ref={inputRef}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      postComment();
-                    }
-                  }}
-                  rows={1}
-                  placeholder="Izoh yozing..."
-                  className="w-full bg-surface-2 rounded-full pl-4 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none leading-5 max-h-32"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                  aria-label="Emoji"
-                >
-                  <Smile size={16} />
+            <div className="pt-1">
+              {replyTo && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground bg-surface-2 rounded-md px-2 py-1 mb-1.5">
+                  <span>Javob: <span className="font-medium text-foreground">@{replyTo.name}</span></span>
+                  <button onClick={() => { setReplyTo(null); setNewComment(""); }} className="hover:text-foreground">✕</button>
+                </div>
+              )}
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative flex items-center">
+                  <textarea
+                    ref={inputRef}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        postComment();
+                      }
+                    }}
+                    rows={1}
+                    placeholder={replyTo ? `Reply to @${replyTo.name}...` : "Izoh yozing..."}
+                    className="w-full bg-surface-2 rounded-full pl-4 pr-10 py-2 text-sm border border-border focus:outline-none focus:border-primary resize-none leading-5 max-h-32"
+                  />
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} aria-label="Emoji">
+                    <Smile size={16} />
+                  </button>
+                </div>
+                <button onClick={postComment} disabled={!newComment.trim() || posting}
+                  className="size-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition-opacity" aria-label="Send">
+                  <Send size={15} />
                 </button>
               </div>
-              <button
-                onClick={postComment}
-                disabled={!newComment.trim() || posting}
-                className="size-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition-opacity"
-                aria-label="Send"
-              >
-                <Send size={15} />
-              </button>
             </div>
           )}
         </div>
@@ -515,5 +510,46 @@ export function PostCard({ post, onDeleted }: { post: PostWithAuthor; onDeleted?
       </Dialog>
     </article>
 
+  );
+}
+
+function CommentItem({
+  c, liked, small, onLike, onReply,
+}: {
+  c: any; liked: boolean; small?: boolean; onLike: () => void; onReply: () => void;
+}) {
+  const handle = c.profiles?.username || c.profiles?.id;
+  return (
+    <div className="flex gap-2 group">
+      <Link to="/profile/$id" params={{ id: handle }} className="shrink-0">
+        <Avatar className={small ? "size-7" : "size-8"}>
+          <AvatarImage src={c.profiles?.avatar_url} />
+          <AvatarFallback className="text-xs">{c.profiles?.full_name?.[0]}</AvatarFallback>
+        </Avatar>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <div className="bg-surface-2 rounded-2xl px-3 py-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link to="/profile/$id" params={{ id: handle }} className="text-xs font-semibold hover:underline">
+              {c.profiles?.full_name}
+            </Link>
+            {c.profiles?.username && (
+              <span className="text-[10px] text-muted-foreground">@{c.profiles.username}</span>
+            )}
+            {c.profiles?.user_type === "gu" && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
+                G.U.
+              </span>
+            )}
+          </div>
+          <div className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.content}</div>
+        </div>
+        <div className="flex items-center gap-3 mt-1 px-3 text-[11px] text-muted-foreground">
+          <span>{formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}</span>
+          <button onClick={onLike} className={`hover:text-foreground font-medium ${liked ? "text-primary" : ""}`}>Like</button>
+          <button onClick={onReply} className="hover:text-foreground font-medium">Reply</button>
+        </div>
+      </div>
+    </div>
   );
 }

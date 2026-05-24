@@ -50,7 +50,7 @@ function PeopleGrid({ type }: { type: "gu" | "prep" }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {filtered.map(p => (
-          <Link key={p.id} to="/profile/$id" params={{ id: p.id }} className="surface-card p-4 hover:border-primary/30 transition-colors">
+          <Link key={p.id} to="/profile/$id" params={{ id: p.username || p.id }} className="surface-card p-4 hover:border-primary/30 transition-colors">
             <div className="flex items-start gap-3">
               <Avatar className="size-12"><AvatarImage src={p.avatar_url} /><AvatarFallback>{p.full_name?.[0]}</AvatarFallback></Avatar>
               <div className="flex-1 min-w-0">

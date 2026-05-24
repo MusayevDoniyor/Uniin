@@ -18,8 +18,10 @@ export const Route = createFileRoute("/profile/$id")({
   component: () => <RequireAuth><ProfilePage /></RequireAuth>,
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function ProfilePage() {
-  const { id } = Route.useParams();
+  const { id: param } = Route.useParams();
   const { user, profile: myProfile } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [unis, setUnis] = useState<any[]>([]);
@@ -32,34 +34,37 @@ function ProfilePage() {
   const [endorseOpen, setEndorseOpen] = useState(false);
   const [skillInput, setSkillInput] = useState("");
 
-  const isMe = myProfile?.id === id;
+  const isMe = !!profile && myProfile?.id === profile.id;
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data: p } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+      // Resolve param: try UUID first, then username
+      const isUuid = UUID_RE.test(param);
+      const query = supabase.from("profiles").select("*");
+      const { data: p } = await (isUuid ? query.eq("id", param) : query.eq("username", param)).maybeSingle();
       setProfile(p);
-      if (p?.user_type === "gu") {
-        const { data: u } = await supabase.from("gu_universities").select("*").eq("profile_id", id);
+      if (!p) { setLoading(false); return; }
+      const realId = p.id;
+      if (p.user_type === "gu") {
+        const { data: u } = await supabase.from("gu_universities").select("*").eq("profile_id", realId);
         setUnis(u || []);
       }
       const { data: ps } = await supabase.from("posts")
         .select(`id, content, media_urls, post_type, likes_count, comments_count, created_at, author_id,
           profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major)`)
-        .eq("author_id", id).order("created_at", { ascending: false });
+        .eq("author_id", realId).order("created_at", { ascending: false });
       setPosts(ps || []);
 
-      if (user && p) {
-        const { data: f } = await supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", id).maybeSingle();
+      if (user) {
+        const { data: f } = await supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", realId).maybeSingle();
         setFollowing(!!f);
-        // Record profile view (don't self-view)
         if (user.id !== p.user_id) {
-          await supabase.from("profile_views").insert({ viewer_id: user.id, viewed_id: id });
+          await supabase.from("profile_views").insert({ viewer_id: user.id, viewed_id: realId });
         }
       }
 
-      // Endorsements
-      const { data: endo } = await supabase.from("skill_endorsements").select("skill, endorser_id").eq("endorsed_id", id);
+      const { data: endo } = await supabase.from("skill_endorsements").select("skill, endorser_id").eq("endorsed_id", realId);
       const grouped: Record<string, { count: number; mine: boolean }> = {};
       (endo || []).forEach((e: any) => {
         if (!grouped[e.skill]) grouped[e.skill] = { count: 0, mine: false };
@@ -68,16 +73,14 @@ function ProfilePage() {
       });
       setEndorsements(Object.entries(grouped).map(([skill, v]) => ({ skill, ...v })).sort((a, b) => b.count - a.count));
 
-      // Badges
-      const { data: bd } = await supabase.from("badges").select("*").eq("user_id", p?.user_id || "").order("earned_at", { ascending: false });
+      const { data: bd } = await supabase.from("badges").select("*").eq("user_id", p.user_id || "").order("earned_at", { ascending: false });
       setBadges(bd || []);
 
-      // Views (self only)
-      if (user && p && user.id === p.user_id) {
+      if (user && user.id === p.user_id) {
         const since = new Date(); since.setDate(since.getDate() - 90);
         const { data: vw, count } = await supabase.from("profile_views")
-          .select("viewer_id, created_at, profiles!profile_views_viewer_id_fkey(id, full_name, avatar_url, user_type)", { count: "exact" })
-          .eq("viewed_id", id).gte("created_at", since.toISOString())
+          .select("viewer_id, created_at, profiles!profile_views_viewer_id_fkey(id, full_name, avatar_url, user_type, username)", { count: "exact" })
+          .eq("viewed_id", realId).gte("created_at", since.toISOString())
           .order("created_at", { ascending: false }).limit(10);
         setViews({ count: count || 0, recent: vw || [] });
       }
@@ -85,15 +88,15 @@ function ProfilePage() {
       setLoading(false);
     };
     load();
-  }, [id, user]);
+  }, [param, user]);
 
   const toggleFollow = async () => {
-    if (!user || isMe) return;
+    if (!user || isMe || !profile) return;
     if (following) {
-      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", id);
+      await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", profile.id);
       setFollowing(false);
     } else {
-      await supabase.from("follows").insert({ follower_id: user.id, following_id: id });
+      await supabase.from("follows").insert({ follower_id: user.id, following_id: profile.id });
       setFollowing(true);
       toast.success(`Following ${profile.full_name}`);
     }
@@ -115,10 +118,10 @@ function ProfilePage() {
     if (!skill) return;
     const existing = endorsements.find((e) => e.skill === skill && e.mine);
     if (existing) {
-      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", id).eq("skill", skill);
+      await supabase.from("skill_endorsements").delete().eq("endorser_id", user.id).eq("endorsed_id", profile.id).eq("skill", skill);
       setEndorsements((prev) => prev.map((e) => e.skill === skill ? { ...e, count: Math.max(0, e.count - 1), mine: false } : e).filter((e) => e.count > 0));
     } else {
-      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: id, skill });
+      const { error } = await supabase.from("skill_endorsements").insert({ endorser_id: user.id, endorsed_id: profile.id, skill });
       if (error) return toast.error(error.message);
       setEndorsements((prev) => {
         const idx = prev.findIndex((e) => e.skill === skill);
@@ -178,6 +181,9 @@ function ProfilePage() {
                 <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight">{profile.full_name}</h1>
                 <UserBadge type={profile.user_type} />
               </div>
+              {profile.username && (
+                <div className="text-sm text-muted-foreground mt-0.5 font-mono">@{profile.username}</div>
+              )}
               {isGU && primaryUni && (
                 <div className="mt-1.5 inline-flex items-center gap-2 text-sm md:text-base font-medium text-gold">
                   <GraduationCap className="size-4 shrink-0" /> {primaryUni.university_name} · {primaryUni.major || primaryUni.degree_type}
@@ -224,7 +230,7 @@ function ProfilePage() {
                   ) : (
                     <div className="space-y-2">
                       {views.recent.map((v: any, i: number) => (
-                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
+                        <Link key={i} to="/profile/$id" params={{ id: v.profiles?.username || v.profiles?.id || "" }} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface transition-colors">
                           <Avatar className="size-9"><AvatarImage src={v.profiles?.avatar_url} /><AvatarFallback>{v.profiles?.full_name?.[0]}</AvatarFallback></Avatar>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate flex items-center gap-1.5">{v.profiles?.full_name} <UserBadge type={v.profiles?.user_type} className="!text-[9px]" /></div>

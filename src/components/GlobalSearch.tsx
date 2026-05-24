@@ -70,13 +70,13 @@ export function GlobalSearch() {
     if (c === "all" || c === "people") {
       tasks.push((async () => {
         const { data } = await supabase.from("profiles")
-          .select("id, full_name, avatar_url, user_type, school_name, intended_major")
-          .or(`full_name.ilike.${like},school_name.ilike.${like},intended_major.ilike.${like}`)
+          .select("id, username, full_name, avatar_url, user_type, school_name, intended_major")
+          .or(`full_name.ilike.${like},username.ilike.${like},school_name.ilike.${like},intended_major.ilike.${like}`)
           .limit(c === "people" ? 20 : 5);
         (data || []).forEach((p: any) => out.push({
           id: p.id, type: "people", title: p.full_name || "User",
-          subtitle: [p.user_type?.toUpperCase(), p.school_name, p.intended_major].filter(Boolean).join(" · "),
-          avatar: p.avatar_url, to: "/profile/$id", params: { id: p.id },
+          subtitle: [p.username ? `@${p.username}` : null, p.user_type?.toUpperCase(), p.school_name, p.intended_major].filter(Boolean).join(" · "),
+          avatar: p.avatar_url, to: "/profile/$id", params: { id: p.username || p.id },
         }));
       })());
     }
@@ -112,13 +112,13 @@ export function GlobalSearch() {
     if (c === "all" || c === "groups") {
       tasks.push((async () => {
         const { data } = await supabase.from("groups")
-          .select("id, name, description, member_count, category")
+          .select("id, slug, name, description, member_count, category")
           .or(`name.ilike.${like},description.ilike.${like},category.ilike.${like}`)
           .limit(c === "groups" ? 20 : 5);
         (data || []).forEach((g: any) => out.push({
           id: g.id, type: "groups", title: g.name,
           subtitle: `${g.member_count || 0} members · ${g.category || "General"}`,
-          to: "/groups",
+          to: "/groups/$slug", params: { slug: g.slug || g.id },
         }));
       })());
     }

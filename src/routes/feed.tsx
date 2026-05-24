@@ -33,7 +33,7 @@ function FeedPage() {
   const load = async () => {
     const { data } = await supabase.from("posts")
       .select(`id, content, title, media_urls, post_type, poll_options, likes_count, comments_count, created_at, author_id,
-        profiles!posts_author_id_fkey(id, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
+        profiles!posts_author_id_fkey(id, username, full_name, avatar_url, user_type, intended_major, grade, target_countries)`)
       .order("created_at", { ascending: false }).limit(50);
 
     // Enrich GU users with primary university
@@ -203,7 +203,7 @@ function RightSidebar() {
 
   useEffect(() => {
     const load = async () => {
-      let q = supabase.from("profiles").select("id, full_name, avatar_url, user_type, city, intended_major, target_countries").eq("onboarding_complete", true).limit(5);
+      let q = supabase.from("profiles").select("id, username, full_name, avatar_url, user_type, city, intended_major, target_countries").eq("onboarding_complete", true).limit(5);
       if (user) q = q.neq("user_id", user.id);
       const { data } = await q;
       setPeople(data || []);
@@ -217,7 +217,7 @@ function RightSidebar() {
         <h3 className="font-semibold text-sm mb-3">People you might know</h3>
         <div className="space-y-3">
           {people.map(p => (
-            <Link key={p.id} to="/profile/$id" params={{ id: p.id }} className="flex items-center gap-3 hover:bg-surface-2 -mx-2 px-2 py-1.5 rounded">
+            <Link key={p.id} to="/profile/$id" params={{ id: p.username || p.id }} className="flex items-center gap-3 hover:bg-surface-2 -mx-2 px-2 py-1.5 rounded">
               <Avatar className="size-9"><AvatarImage src={p.avatar_url} /><AvatarFallback>{p.full_name?.[0]}</AvatarFallback></Avatar>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate flex items-center gap-1.5">{p.full_name} <UserBadge type={p.user_type} className="!text-[10px]" /></div>
