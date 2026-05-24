@@ -104,10 +104,6 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Name *</Label>
-              <Input value={draft.name} maxLength={80} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} placeholder="IELTS Academic" className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs">Name *</Label>
               {nameMode === "preset" ? (
                 <Select value={draft.name} onValueChange={(v) => { if (v === "__custom__") { setNameMode("custom"); setDraft(d => ({ ...d, name: "" })); } else { setDraft(d => ({ ...d, name: v })); } }}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Sertifikat turini tanlang" /></SelectTrigger>
@@ -129,8 +125,6 @@ export function CertificateEditor({ value, onChange, compact }: Props) {
             </div>
             <div>
               <Label className="text-xs">Issue date</Label>
-              <Input type="month" value={draft.issue_date} onChange={e => setDraft(d => ({ ...d, issue_date: e.target.value }))} className="mt-1" />
-            </div>
               <Input type="month" value={draft.issue_date} onChange={e => setDraft(d => ({ ...d, issue_date: e.target.value }))} className="mt-1" />
             </div>
             <div>
