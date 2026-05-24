@@ -15,15 +15,25 @@ export const Route = createFileRoute("/explore")({
 
 function ExplorePage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-4">Explore people</h1>
+    <div className="max-w-5xl mx-auto px-3 md:px-4 py-4 md:py-6">
+      <h1 className="text-2xl font-bold mb-1">Explore</h1>
+      <p className="text-sm text-muted-foreground mb-4">Find mentors, peers, and universities to follow.</p>
       <Tabs defaultValue="gu">
-        <TabsList>
-          <TabsTrigger value="gu">🎓 Find Mentors (G.U.)</TabsTrigger>
-          <TabsTrigger value="prep">📚 Find Peers (Prep)</TabsTrigger>
+        <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-grid">
+          <TabsTrigger value="gu">Mentors</TabsTrigger>
+          <TabsTrigger value="prep">Peers</TabsTrigger>
+          <TabsTrigger value="uni">Universities</TabsTrigger>
         </TabsList>
         <TabsContent value="gu" className="mt-4"><PeopleGrid type="gu" /></TabsContent>
         <TabsContent value="prep" className="mt-4"><PeopleGrid type="prep" /></TabsContent>
+        <TabsContent value="uni" className="mt-4">
+          <div className="surface-card p-8 text-center">
+            <div className="text-2xl mb-2">🎓</div>
+            <h3 className="font-semibold mb-1">Explore universities & scholarships</h3>
+            <p className="text-sm text-muted-foreground mb-4">Browse top universities, deadlines, and scholarship opportunities.</p>
+            <Link to="/universities" className="inline-flex px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-accent">Open universities →</Link>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

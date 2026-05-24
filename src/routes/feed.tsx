@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Image as ImageIcon, Send, Loader2, Sparkles, X, Trophy, HelpCircle, BookOpen, FileEdit, BarChart3, Pencil } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Image as ImageIcon, Send, Loader2, Sparkles, X, Trophy, HelpCircle, BookOpen, FileEdit, BarChart3, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
 import { UserBadge } from "@/components/UserBadge";
 import { Link } from "@tanstack/react-router";
+import { ProfileCompletionBanner } from "@/components/ProfileCompletionBanner";
 
 export const Route = createFileRoute("/feed")({
   component: () => <RequireAuth rightSidebar={<RightSidebar />}><FeedPage /></RequireAuth>,
@@ -30,6 +32,7 @@ function FeedPage() {
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
+  const [feedTab, setFeedTab] = useState<"foryou" | "following">("foryou");
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -66,7 +69,9 @@ function FeedPage() {
     const ch = supabase.channel("feed-posts")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, load)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const onOpen = () => openComposer("update");
+    window.addEventListener("uniin:open-composer", onOpen);
+    return () => { supabase.removeChannel(ch); window.removeEventListener("uniin:open-composer", onOpen); };
   }, []);
 
   const onPickFiles = (files: FileList | null) => {
@@ -116,7 +121,20 @@ function FeedPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-2xl mx-auto px-3 md:px-4 py-4 md:py-6 space-y-3">
+      <ProfileCompletionBanner />
+
+      <Link to="/groups" className="surface-card p-3 flex items-center gap-3 hover:border-primary/40 transition-colors group">
+        <div className="size-9 rounded-full bg-primary/15 text-primary flex items-center justify-center">
+          <Users className="size-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold">Guruhlar</div>
+          <div className="text-xs text-muted-foreground">Sizning hamjamiyatingiz bilan suhbatlashing</div>
+        </div>
+        <span className="text-xs text-primary group-hover:translate-x-0.5 transition">Ko'rish →</span>
+      </Link>
+
       {/* LinkedIn-style composer entry */}
       <div className="surface-card p-3">
         <div className="flex items-center gap-3">
@@ -253,14 +271,34 @@ function FeedPage() {
 
 
 
-      {loading ? <div className="text-center py-12 text-muted-foreground"><Loader2 className="size-6 animate-spin mx-auto" /></div>
-        : posts.length === 0 ? (
-          <div className="surface-card p-12 text-center">
-            <Sparkles className="size-10 text-primary mx-auto mb-3" />
-            <h3 className="font-semibold mb-1">Be the first to post</h3>
-            <p className="text-sm text-muted-foreground">Share your journey, ask a question, or drop a tip.</p>
-          </div>
-        ) : posts.map(p => <PostCard key={p.id} post={p} />)}
+      <Tabs value={feedTab} onValueChange={(v) => setFeedTab(v as any)} className="w-full">
+        <TabsList className="w-full grid grid-cols-2 bg-transparent border-b border-border rounded-none h-auto p-0">
+          <TabsTrigger value="foryou" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none py-2.5">For You</TabsTrigger>
+          <TabsTrigger value="following" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none py-2.5">Following</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {loading ? (
+        <div className="space-y-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="surface-card p-4 animate-pulse">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="size-10 rounded-full bg-surface-2" />
+                <div className="flex-1 space-y-2"><div className="h-3 w-1/3 bg-surface-2 rounded" /><div className="h-2 w-1/4 bg-surface-2 rounded" /></div>
+              </div>
+              <div className="h-3 w-full bg-surface-2 rounded mb-2" />
+              <div className="h-3 w-4/5 bg-surface-2 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="surface-card p-10 text-center">
+          <Sparkles className="size-10 text-primary mx-auto mb-3" />
+          <h3 className="font-semibold mb-1">{feedTab === "following" ? "Following feed empty" : "Be the first to post"}</h3>
+          <p className="text-sm text-muted-foreground mb-4">{feedTab === "following" ? "Follow students or mentors to see their posts." : "Share your journey, ask a question, or drop a tip."}</p>
+          <Link to="/explore" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-accent">Explore people →</Link>
+        </div>
+      ) : posts.map(p => <PostCard key={p.id} post={p} />)}
     </div>
   );
 }
